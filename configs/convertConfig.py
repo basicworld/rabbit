@@ -15,6 +15,8 @@ def convertDictValueToList(value_name, *args, **kwargs):
 
     There are 2 algrithm: simple one and greedy one
     simple one works in default
+    @greedy=True
+    @greedy=False
 
     if you set greedy=True in kwargs the greedy one will works
     set greedy==True will spend more Time, make sure you need it else you should
@@ -78,7 +80,7 @@ response_list = convertDictValueToList('id',dict1,dict2)
 
         test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3},}
         >>>convertDictValueToList('id',test_dict3)
-        [1, 22, 2]
+        [1, 3, 2]
         >>>convertDictValueToList('id',{'id':1},{'id':2},{'id':3})
         [1, 2, 3]
         """
@@ -215,6 +217,5 @@ if __name__ == '__main__':
     """
     doctest test
     """
-    print "If doctest passed, this will be the only one output."
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)

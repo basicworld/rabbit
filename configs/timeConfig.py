@@ -69,5 +69,5 @@ if __name__ == '__main__':
     """
     print "If doctest passed, this will be the only one output."
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)
     
