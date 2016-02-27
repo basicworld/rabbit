@@ -7,7 +7,15 @@ Time: 20160222
 """
 import datetime
 def decoratorConfig(func):
-    '''装饰器，用于测试运行性能'''
+    '''
+    Wlf: this is a decorator used for testing your function
+    how to use:
+    
+    from configs.decoratorConfig import decoratorConfig
+    @decoratorConfig
+    def you_func_name(*args, kwargs):
+        pass
+    '''
     def wrapper(*args, **kwargs):
         print '-'*20
         print '[+] call : %s()' % func.__name__

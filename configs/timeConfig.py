@@ -44,6 +44,7 @@ def timeConfig(base_day=False, days_before=0, detail='day'):
     return datetime.datetime.strftime(target_time, time_type[detail])
 
 if __name__ == '__main__':
+    """test"""
     print timeConfig()
     print timeConfig(days_before=1, base_day=False, detail='day')
     print timeConfig(days_before=-1, base_day=False, detail='day')

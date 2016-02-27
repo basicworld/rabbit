@@ -65,6 +65,7 @@ class csvConfig(object):
 
 
 if __name__ == '__main__':
+    """test"""
     app = csvConfig() 
     app.csv_open(filename='test.csv', filedir='./test')
     app.csv_write([1,2,3,4])

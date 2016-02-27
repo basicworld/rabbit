@@ -26,5 +26,6 @@ class sqlConfig(object):
 
 
 if __name__ == '__main__':
+    """test"""
     app = sqlConfig()
     print app.sql_get('sql')
