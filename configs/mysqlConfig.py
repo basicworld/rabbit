@@ -18,7 +18,7 @@ class mysqlConfig(object):
         """
         Recommand func to connect mysql
         """
-        self.conn = MySQLdb.connect(host=host,user=user,passwd=passwd,
+        self.conn = MySQLdb.connect(host=host,user=user,passwd=passwd,\
                     db=db, port=port, charset=charset) 
         self.curs = self.conn.cursor()
 
@@ -95,31 +95,47 @@ class companyInfo(object):
         try:
             sql = sql % kwargs
             if debug:
+                print '-'*10, 'test mode start', '-'*10
                 print sql
+                print '-'*10, 'test mode start', '-'*10
             self.curs.execute(sql)
             return self.curs.fetchall()
         except AttributeError as e:
             print """Error: you must connect to mysql first!\n
 Here is an example that you can follow in your project:
 app = mysqlConfig()
+app.mysql_connect(host,user,passwd,db, port=3306, charset='utf8')
 app.mysql_curs_execute('select * from ord_base')
 app.mysql_curs_execute('select * from ord_base where %(select_days)s', 
     select_days="updatetime>'20160222'")
 app.mysql_close()
-
             """
             raise
         except:
             self.mysql_close()
             raise
+# def mysqlDoctest():
+#     """
+#     # doctest
+#     >>> app = mysqlConfig()
+#     >>> app.mysql_curs_execute('select * from ord_base where %(select_days)s', \
+#         debug=True, select_days="updatetime>'20160222'")
+#     >>> app.mysql_close()
+
+#     """
+#     app = mysqlConfig()
+#     # app.mysql_connect_default_host(host='host_01')
+#     # app.mysql_curs_execute('select * from ord_base', debug=True)
+#     app.mysql_curs_execute('select * from ord_base where %(select_days)s', 
+#         debug=True, select_days="updatetime>'20160222'")
+#     app.mysql_close()   
 
 if __name__ == '__main__':
-    
-    """test"""
-    app = mysqlConfig()
-    # app.mysql_connect_default_host(host='host_01')
-    # app.mysql_curs_execute('select * from ord_base', debug=True)
-    app.mysql_curs_execute('select * from ord_base where %(select_days)s', 
-        debug=True, select_days="updatetime>'20160222'")
-    app.mysql_close()
-
+    """
+    doctest test
+    """
+    pass
+    # print "If doctest passed, this will be the only one output."
+    # import doctest
+    # doctest.testmod()
+    # mysqlDoctest()

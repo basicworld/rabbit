@@ -22,6 +22,6 @@ class: save and get sql model
 function: get sql model from inside sqlConfig class
 
 ## configs.mysqlConfig.mysqlConfig
-class: unpack MySQLdb functions to connect mysql, execute select_sql and 
+class: unpack MySQLdb functions to connect mysql, execute select_sql and \n 
 close mysql connection. with fault tolerance
 

@@ -11,65 +11,57 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 from timeConfig import timeConfig
+from convertConfig import convertToList
 
 
 
 class csvConfig(object):
-    def csv_open(self, filename, filedir='./', open_type=False):
+    def csv_open(self, filename, filedir='./', open_type='wb'):
         """
         @filename
         """
         if not os.path.isdir(filedir):
             os.makedirs(filedir)
 
-        fullpath = os.path.join(filedir, filename)
+        _fullpath = os.path.join(filedir, filename)
         if open_type:
-            self.csv_file = open(fullpath, open_type) #ab wb
+            pass # todo: test open_type
         else:
-            if os.path.isfile(fullpath):
-                open_type = 'ab'                
-            else:
-                open_type = 'wb'
+            open_type = 'ab' if os.path.isfile(_fullpath) else 'wb'
 
-        self.csv_file = open(fullpath, open_type)
-        if open_type.startswith('w'):
-            self.csv_file.write('\xEF\xBB\xBF')
-        self.csv_writer = csv.writer(self.csv_file)#, dialect='excel')
+        _write_bom = False if os.path.isfile(_fullpath) else True
+        self._csv_file = open(_fullpath, open_type)
+
+        # write BOM to adapt Chinese
+        if open_type.startswith('w') or _write_bom:
+            self._csv_file.write('\xEF\xBB\xBF')
+        self._csv_writer = csv.writer(self._csv_file)#, dialect='excel')
        
-    
     def csv_write(self,*args):
         """
-        recursion
+        write all args in one line
         """
         try:
-            for arg in args:
-                if isinstance(arg, (tuple, list)):
-                    for i in arg:
-                        if isinstance(i, (tuple, list)):
-                            self.csv_write(i)
-                        else:
-                            # print '-', arg
-                            self.csv_writer.writerow(arg)
-                            break
-                else:
-                    self.csv_writer.writerow(args)
-                    # print '-', args
-                    break
+            _resp_list = convertToList(args)
+            if _resp_list:
+                self._csv_writer.writerow(_resp_list)
         except:
             self.csv_close()
             raise
 
     def csv_close(self):
-        self.csv_file.close()
-
-
+        try:
+            self._csv_file.close()
+            return True
+        except:
+            pass
 
 if __name__ == '__main__':
     """test"""
-    app = csvConfig() 
-    app.csv_open(filename='test.csv', filedir='./test')
+    app = csvConfig()
+    app.csv_open(filename='test.csv', filedir='./test', open_type='wb')
     app.csv_write([1,2,3,4])
-    app.csv_write([u'测试', u'中文'])
+    app.csv_write([u'测试', u'中文'],[u'测试', u'中文'])
     app.csv_close()
 
 

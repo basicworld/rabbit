@@ -4,13 +4,18 @@ Class function: convert var to target type
 Dont change anything
 Author: wlf
 Time: 20160224
-""" 
-from decimal import Decimal
+"""
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 def convertDictValueToList(value_name, *args, **kwargs):
     """
     Func to return values where key==value_name
+
     There are 2 algrithm: simple one and greedy one
     simple one works in default
+
     if you set greedy=True in kwargs the greedy one will works
     set greedy==True will spend more Time, make sure you need it else you should
     use simple func, eg:
@@ -19,6 +24,29 @@ def convertDictValueToList(value_name, *args, **kwargs):
         simple convertDictValueToList('id',test_dict3) 
         simple convertDictValueToList('id',test_dict3, greedy=False)
 
+    # doctest
+    >>> test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3},}
+    >>> convertDictValueToList('id',test_dict3, greedy=True)
+    [1, 3, 2]
+    >>> test_dict3 = {'1':{'id':1}, '2':{'aid':2}, '3':{'id':3},}
+    >>> convertDictValueToList('id',test_dict3, greedy=True)
+    [1, 3]
+    >>> test_dict3 = {'1':{'id':1}, '2':{'aid':2}, '3':{'id':3},}
+    >>> convertDictValueToList(None,test_dict3, greedy=True)
+    [1, 3, 2]
+    >>> test_dict3 = {'1':{'id':1}, '2':{'aid':2}, '3':{'id':3},}
+    >>> convertDictValueToList(False,test_dict3, greedy=True)
+    [1, 3, 2]
+    >>> test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3, '4':{'id':4}},}
+    >>> convertDictValueToList('id',test_dict3, greedy=True)
+    [1, 3, 4, 2]
+    >>> test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3, '4':{'id':4}},}
+    >>> convertDictValueToList('id',test_dict3, greedy=False)
+    [1, 3, 2]
+    >>> test_dict3 = {'1':{'id':1,'name':'cang'}, '2':{'id':2}, \
+        '3':{'id':3, '4':{'id':4}},}
+    >>> convertDictValueToList('id',test_dict3)
+    [1, 3, 2]
     """
 
     if (not args):
@@ -26,13 +54,15 @@ def convertDictValueToList(value_name, *args, **kwargs):
 Here is an example that you can follow in your project:
 response_list = convertDictValueToList('id',dict1,dict2)
         """
-        return None
+        return False
 
+    _collector = []  
+    _collect_with_value_name = False if value_name in (None, False) else True
+    if not _collect_with_value_name:
+        kwargs = {'greedy': True}
 
-    collector = []  
-    collect_with_value_name = False if value_name in (None, False, 0) else True
-
-    def convert_with_value_name_simple(value_name, arg):
+    # @decoratorConfig
+    def _convert_with_value_name_simple(value_name, arg):
         """
         Simple algrithm, it will not loop all the keys, if you use this func,
         args must be a or a list of dict where must fullfil all the follow:
@@ -48,7 +78,7 @@ response_list = convertDictValueToList('id',dict1,dict2)
 
         test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3},}
         >>>convertDictValueToList('id',test_dict3)
-        [1, 3, 2]
+        [1, 22, 2]
         >>>convertDictValueToList('id',{'id':1},{'id':2},{'id':3})
         [1, 2, 3]
         """
@@ -57,19 +87,20 @@ response_list = convertDictValueToList('id',dict1,dict2)
                 value = arg[value_name]
                 if isinstance(value, dict):
                     for value in arg.values():
-                        convert_with_value_name_simple(value_name, value)
+                        _convert_with_value_name_simple(value_name, value)
                 else:
-                    collector.append(value)
+                    _collector.append(value)
             except KeyError, e:
                 for value in arg.values():
                     if isinstance(value, dict):
-                        convert_with_value_name_simple(value_name, value)
+                        _convert_with_value_name_simple(value_name, value)
                     else:
-                        return None
+                        return False
         else:
-            return None
+            return False
 
-    def convert_with_value_name_greedy(value_name, arg, key=False):
+    # @decoratorConfig
+    def _convert_with_value_name_greedy(value_name, arg, key=False):
         '''
         Greedy algrithm: 
         loop all keys in dict and return value_list where:
@@ -77,89 +108,113 @@ response_list = convertDictValueToList('id',dict1,dict2)
         '''
         if isinstance(arg, dict):
             for arg_key in arg:
-                convert_with_value_name_greedy(value_name, arg[arg_key], 
+                _convert_with_value_name_greedy(value_name, arg[arg_key], 
                     key=arg_key)
         else:
-            if collect_with_value_name and (key == value_name):
-                collector.append(arg)
+            if _collect_with_value_name and (key == value_name):
+                _collector.append(arg)
 
-    if kwargs and kwargs['greedy']:
+    # @decoratorConfig
+    def _convert_without_value_name_greedy(value_name, arg, key=False):
+        '''
+        Greedy algrithm: 
+        loop all keys in dict and return value_list where:
+        (not isinstance(value, dict))
+        '''
+        if isinstance(arg, dict):
+            for arg_key in arg:
+                _convert_without_value_name_greedy(value_name, arg[arg_key], 
+                    key=arg_key)
+        else:
+            _collector.append(arg)
+
+    def _loop(value_name, args, func):
         for arg in args:
-            convert_with_value_name_greedy(value_name, arg)
+            func(value_name, arg)
+
+    if kwargs and kwargs['greedy'] and _collect_with_value_name:
+        _loop(value_name, args, _convert_with_value_name_greedy)
+    elif kwargs and kwargs['greedy'] and not _collect_with_value_name:
+        _loop(value_name, args, _convert_without_value_name_greedy)
     else:
-        for arg in args:
-            # convert_with_value_name_greedy(value_name, arg)
-            convert_with_value_name_simple(value_name, arg)
+        _loop(value_name, args, _convert_with_value_name_simple)
 
-    return collector
+    if _collector:
+        return _collector
+    else:
+        return False
 
-
-def convertToList(var_type,*args):
+from decimal import Decimal
+def convertToList(*args, **kwargs):
     """
     var_type should be int float str decimal
     if you convert a var to a cant_be_type, it will return default var
-    """
-    if not args:
-        return None
 
-    convertable = False if var_type in (None, False, 0) else True
-        
-    collector = []
+    use func like:
+    convertToList(*args, var_type=str)
+    convertToList(*args)
+
+    #doctest
+    # 不支持中文测试
+    >>> convertToList(1,2,3)
+    [1, 2, 3]
+    >>> convertToList(None)
+    
+    >>> convertToList(False)
+    False
+    >>> convertToList('a',1,1.1,'string', var_type=int)
+    ['a', 1, 1, 'string']
+    >>> convertToList('a',1,1.1,'string', var_type=Decimal)
+    ['a', Decimal('1'), Decimal('1.100000000000000088817841970012523233890533447265625'), 'string']
+    >>> convertToList(1, {'id':2})
+    [1, 2]
+    >>> convertToList(1.2, {'id':2.6}, var_type=int)
+    [1, 2]
+    >>> convertToList(1,2,3,[4,[5],[[6],7],8],9,10,(11))
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    >>> convertToList(1,2,3,[4,[5],[[6],7],8],9,10,(11), var_type=str)
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
+    """
+
+    if not args:
+        return False
+
+    from decimal import InvalidOperation
+    var_type = kwargs['var_type'] if (kwargs and kwargs['var_type']) else False
+    convertable = False if var_type in (None, False) else True
+
+    _collector = []
+
     def convert_with_var_type_greedy(var_type, args):
         '''greedy algrithm: get all keys in args'''
         for arg in args:
-            if not isinstance(arg, (tuple, list, set)):
-                try:
-                    collector.append(var_type(arg)) if convertable else \
-                        collector.append(arg)
-                except ValueError, e:
-                    collector.append(arg)
-            else:
+            if isinstance(arg, (tuple, list, set, dict)):
+                if isinstance(arg, dict):
+                    arg = convertDictValueToList(None, arg, greedy=True)
                 convert_with_var_type_greedy(var_type, arg)
+            else:
+                try:
+                    _collector.append(var_type(arg)) if convertable else \
+                        _collector.append(arg)
+                except ValueError, e:
+                    _collector.append(arg)
+                except InvalidOperation, e:
+                    _collector.append(arg)
 
     convert_with_var_type_greedy(var_type, args)
     
-    # return collector
-    if len(collector) == 1:
-        return collector[0]
+    # return _collector
+    if not _collector:
+        return False
+    elif len(_collector) == 1:
+        return _collector[0]
     else:
-        return collector
+        return _collector
 
 if __name__ == '__main__':
-    """test"""
-    # test_dict = {'aa':'6','bb':{'id':7}}
-    # test_dict2 = {'dd':{'id':{'id':'1','bb':{'id':2}},'bb':{'id':3}},'ee':{'id':'4','bb':{'id':5}}}
-    # print convertDictValueToList('id',test_dict,test_dict2)
-
-
-    test_dict3 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3},}
-    print convertDictValueToList('id',test_dict3, greedy=True)
-    print convertDictValueToList('id',test_dict3)
-    print convertDictValueToList('id',test_dict3, greedy=False)
-    # print convertDictValueToList('id',{'id':1},{'id':2},{'id':3})
-    # print convertDictValueToList('id',{'we':1},{'we':2},{'we':3})
-    # test_dict4 = {'1':{'id':1}, '2':{'id':2}, '3':{'id':3},}
-
-    # print convertDictValueToList(test_dict,test_dict2)
-    # convertDictValueToList('id',{'bb':7})
-
-    # print convertToList(int, 1.2,1.3)
-    # print convertToList(Decimal, 1.2,1.3)
-    # print convertToList(str, 1.2,1.3)
-    # print convertToList(int, 1.2)
-    # print convertToList(Decimal, 1.2)
-    print convertToList(float, 1.2)
-    print convertToList(float, 'aaa','b')
-    print convertToList(str, ([1,[2,3,[4,5],[6,None,'a',7,[8]]]],))
-    # print convertToList(0, 1.2,1.3)
-    # print convertToList(0, 1.2,1.3)
-    # print convertToList(0, 1.2,1.3)
-    # print convertToList(0, 1.2)
-    # print convertToList(0, 1.2)
-    # print convertToList(0, 1.2)
-    # print convertToList(0, 'aaa','b')
-    # print convertToList(0, ([1,[2,3,[4,5],[6,None,'a',7,[8]]]],))
-    
-
-
-
+    """
+    doctest test
+    """
+    print "If doctest passed, this will be the only one output."
+    import doctest
+    doctest.testmod()

@@ -22,6 +22,17 @@ def decoratorConfig(func):
         start_time = datetime.datetime.now()
         func(*args, **kwargs)
         end_time = datetime.datetime.now()
-        print '    spend %s' % (end_time - start_time)
+        print '    spend time %s' % (end_time - start_time)
     return wrapper
+
+@decoratorConfig
+def decoratorTest(*args, **kwargs):
+    """test"""
+    if args:
+        print args
+    if kwargs:
+        print kwargs
+
+if __name__ == '__main__':
+    decoratorTest(1,2,3)
 
