@@ -18,12 +18,11 @@ def timeConfig(base_day=False, days_before=0, detail='day'):
 
     >>> timeConfig(base_day='20160123')
     2016-01-23
-
     '''
 
     if base_day:
-        base_day = str(base_day)
-        base_day = base_day.replace("-", "")
+        # base_day = str(base_day)
+        base_day = str(base_day).replace("-", "")
         try:
             base_day = time.strptime(base_day, '%Y%m%d')
             base_day = datetime.datetime(*base_day[:3])

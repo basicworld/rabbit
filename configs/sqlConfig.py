@@ -21,7 +21,6 @@ class sqlConfig(object):
                 r""" 
                 test
                 """,
-
         }
 
 
