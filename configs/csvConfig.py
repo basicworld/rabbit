@@ -16,7 +16,7 @@ from convertConfig import convertToList
 
 
 class csvConfig(object):
-    def csv_open(self, filename, filedir='./', open_type='wb'):
+    def __init__(self, filename, filedir='./', open_type='wb'):
         """
         @filename
         """
@@ -41,29 +41,32 @@ class csvConfig(object):
         """
         write all args in one line
         """
-        try:
-            _resp_list = convertToList(args)
-            if _resp_list:
-                self._csv_writer.writerow(_resp_list)
-        except:
-            self.csv_close()
-            raise
+        _resp_list = convertToList(args)
+        if _resp_list and not self._csv_file.closed:
+            self._csv_writer.writerow(_resp_list)
 
-    def csv_close(self):
-        try:
+
+    def __del__(self):
+        if not self._csv_file.closed:
             self._csv_file.close()
-            return True
-        except:
-            pass
+
+
+    def __enter__(self):
+        return self.csv_write
+
+    def __exit__(self, *unused):
+        if not self._csv_file.closed:
+            self._csv_file.close()
 
 if __name__ == '__main__':
     """test"""
-    app = csvConfig()
-    app.csv_open(filename='test.csv', filedir='./test', open_type='wb')
+    app = csvConfig(filename='test2.csv', filedir='./test', open_type='wb')
     app.csv_write([1,2,3,4])
     app.csv_write([u'测试', u'中文'],[u'测试', u'中文'])
-    app.csv_close()
 
+    with csvConfig(filename='test.csv', filedir='./test', open_type='wb') as csv_write:
+        csv_write([1,2,3,4])
+        csv_write([u'测试', u'中文'],[u'测试', u'中文'])
 
 
 
