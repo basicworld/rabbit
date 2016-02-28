@@ -5,5 +5,7 @@ Dont change anything
 Author: wlf
 Time: 20160228
 """
-import doctest
-doctest.testfile('doctest.ini')
+# import os
+# BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
+# import doctest
+# doctest.testfile(os.path.join(BASE_DIR, 'doctest.ini'))
