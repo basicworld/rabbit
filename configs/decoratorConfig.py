@@ -6,24 +6,16 @@ Author: wlf
 Time: 20160222
 """
 import datetime
+import time
+import sys
 def decoratorConfig(func):
-    '''
-    Wlf: this is a decorator used for testing your function
-    how to use:
-    
-    from configs.decoratorConfig import decoratorConfig
-    @decoratorConfig
-    def you_func_name(*args, kwargs):
-        pass
-    '''
-    def wrapper(*args, **kwargs):
-        print '-'*20
-        print '[+] call : %s()' % func.__name__
-        start_time = datetime.datetime.now()
-        func(*args, **kwargs)
-        end_time = datetime.datetime.now()
-        print '    spend time %s' % (end_time - start_time)
-    return wrapper
+    def _wrapper(*args, **kwargs):
+        _start_time = datetime.datetime.now()
+        _resp = func(*args, **kwargs)
+        _end_time = datetime.datetime.now()
+        print (u"<%s> spend %s \u03bcs." % (func.__name__, (_end_time - _start_time).microseconds))
+        return _resp
+    return _wrapper
 
 @decoratorConfig
 def decoratorTest(*args, **kwargs):
@@ -35,4 +27,6 @@ def decoratorTest(*args, **kwargs):
 
 if __name__ == '__main__':
     decoratorTest(1,2,3)
+    decoratorTest(1,1,3)
+    decoratorTest(1,3,3)
 

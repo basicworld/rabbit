@@ -9,7 +9,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-def convertDictValueToList(value_name, *args, **kwargs):
+def convertDictValueToList(value_name='', *args, **kwargs):
     """
     Func to return values where key==value_name
 
@@ -52,14 +52,12 @@ def convertDictValueToList(value_name, *args, **kwargs):
     """
 
     if (not args):
-        print """Error use!
-        Here is an example that you can follow in your project:
-        response_list = convertDictValueToList('id',dict1,dict2)
-        """
+        raise TypeError ("convertDictValueToList(value_name='', *args, **kwargs)\
+         got wrong keywords")
         return False
 
     _collector = []  
-    _collect_with_value_name = False if value_name in (None, False) else True
+    _collect_with_value_name = False if not value_name else True
     if not _collect_with_value_name:
         kwargs = {'greedy': True}
 

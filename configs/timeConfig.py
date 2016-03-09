@@ -44,8 +44,8 @@ def timeConfig(base_day='', days_before=0, detail='day'):
             base_day = time.strptime(base_day, '%Y%m%d')
             base_day = datetime.datetime(*base_day[:3])
         except:
-            print r'Error: base_day must be '' or %Y%m%d or %Y-%m-%d'
-            return False
+            raise ValueError(r'base_day must be an exsit day')
+            # return False
     else:
         base_day = datetime.datetime.now()
 

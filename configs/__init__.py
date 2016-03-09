@@ -1,11 +1,6 @@
 # -*- coding:utf8 -*-
-"""
-Class function: convert var to target type
-Dont change anything
-Author: wlf
-Time: 20160228
-"""
-# import os
-# BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
-# import doctest
-# doctest.testfile(os.path.join(BASE_DIR, 'doctest.ini'))
+import os, sys
+configs_folder = os.path.split(os.path.realpath(__file__))[0]
+if configs_folder not in sys.path:
+    sys.path.insert(0, configs_folder)
+# print configs_folder
