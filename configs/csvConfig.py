@@ -14,7 +14,6 @@ from timeConfig import timeConfig
 from convertConfig import convertToList
 
 
-
 class csvConfig(object):
     def __init__(self, filename, filedir='./', open_type='wb'):
         """
