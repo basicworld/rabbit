@@ -3,8 +3,8 @@ Author: basicworld@163.com
 Common methods that you can use in your project
 
 ### rabbit.py:
-tool kit like python.collections
-several quik, beautiful models include:
+----tool kit like python.collections
+----several quik, beautiful models include:
 
 timeDecorator(): decorator to test function running time
 
@@ -22,10 +22,10 @@ emailSender(): wrapper mailer
 
 testFunc(): inner test function
 
-todo: add function to convert complex dict to list
+----todo: add function to convert complex dict to list
 
 ### parrot.py:
-config file for rabbit
-your personal email should save here if you need use rabbit.emailManager
+----config file for rabbit
+----your personal email should save here if you need use rabbit.emailManager
 
-todo: add more email server
+----todo: add more email server
