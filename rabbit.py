@@ -23,7 +23,7 @@ import datetime
 import MySQLdb
 import zipfile
 import mailer
-from carrot import emailConfig
+from carrot import emailConfig as _emailConfig
 from carrot import POP3_SMTP_IMAP
 from decimal import Decimal
 
@@ -312,7 +312,7 @@ def emailSender(To, Subject, Body, attach=None):
     @Body<str>
     @attach<None or str of filename>
     """
-    _usrconf = emailConfig()
+    _usrconf = _emailConfig()
     _message = mailer.Message(From=_usrconf.account['usr'],
                               To=To,
                               Subject=Subject,
@@ -361,7 +361,7 @@ if __name__ == '__main__':
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
 
     print emailSender(['1032319360@qq.com', 'basicworld@126.com'],
-                      'hi im free',
+                      u'hi im free 你好',
                       'come to <strong>me</strong>! at %s' % timeGenerator(),
-                      attach='./test.py')
+                      attach='./carrot.py.default')
     pass
