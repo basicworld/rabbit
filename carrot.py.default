@@ -1,0 +1,22 @@
+# -*- coding:utf8 -*-
+"""
+Intro: config file for tool kit
+Author: basicworld@163.com
+"""
+
+
+class emailConfig(object):
+    # input your config message here
+    account = {'usr': 'username@example.com', 'pwd': '', }
+    html_model = """<!DOCTYPE html><body>%(body)s</body></html>"""
+
+
+class POP3_SMTP_IMAP(object):
+    # default POP3_SMTP_IMAP
+    server = {
+        '163': {
+            'imap': {'host': 'imap.163.com', 'port': [993, 143], 'ssl': True},
+            'smtp': {'host': 'smtp.163.com', 'port': [994, 25], 'ssl': True},
+            'pop3': {'host': 'pop.163.com', 'port': [995, 110], 'ssl': True},
+        },
+    }

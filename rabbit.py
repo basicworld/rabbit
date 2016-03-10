@@ -8,10 +8,13 @@ timeGenerator(): create time
 listConverter(): convert to list
 csvManager(): wrapper csv model
 mysqlManager(): wrapper MySQLdb
+zipManager(): wrapper zipfile
+emailSender(): wrapper mailer
 testFunc(): inner test function
 """
 
 import os
+import re
 import sys
 import csv
 import glob
@@ -19,6 +22,9 @@ import time
 import datetime
 import MySQLdb
 import zipfile
+import mailer
+from carrot import emailConfig
+from carrot import POP3_SMTP_IMAP
 from decimal import Decimal
 
 reload(sys)
@@ -237,25 +243,41 @@ class zipManager(object):
             raise TypeError("zipManager have no extract_function with \
                             open_mode: %s" % self._mode)
         os.makedirs(todir) if not os.path.isdir(todir) else None
-        #todo
+        # todo
 
-    def write(self, fromname=None, fromdir='./'):
+    def write(self, zipfile='.*', zipdir='./', zipfolder=False):
         """
-        write(self,fromdir='./', fromname=None)
+        write(self, zipdir='./', zipfile=None)
         write target file(s) to zip
-        @fromname<str>: from file(s), it can be re_type such as *.csv
-        @fromdir<str>: from dir
+        @zipfile<str>: from file(s), it can be re_type such as .*\.csv
+        @zipdir<str>: from dir
+        @zipfolder<bool>: zip folder or not
         """
         if self._mode in ('r',):
             raise TypeError("zipManager have no write_function with \
                             open_mode: %s" % self._mode)
 
-        for _item in glob.glob(fromdir+fromname):
-            self._file.write(_item)
+        # zip folder
+        if zipfolder:
+            zipdir_len = len(zipdir.rstrip(os.sep)) + 1
+            for dirname, subdirs, files in os.walk(zipdir):
+                for filename in files:
+                    if re.search(zipfile, filename):
+                        path = os.path.join(dirname, filename)
+                        entry = path[zipdir_len:]
+                        self._file.write(path, entry)
+                        print (path, entry)
+
+        #not zip folder
+        else:
+            for _item in glob.glob(os.path.join(zipdir, '*')):
+                if re.search(zipfile, _item) and os.path.isfile(_item):
+                    self._file.write(_item)
 
     def __del__(self):
         try:
             self._file.close()
+            return {}
         except:
             pass
 
@@ -264,6 +286,41 @@ class zipManager(object):
 
     def __exit__(self, *unused):
         pass
+
+
+def emailSender(To, Subject, Body, attach=None):
+    """
+    easy to use mail
+    @To<str_list>: list of users you want to send email
+    @Subject<str>
+    @Body<str>
+    @attach<None or str of filename>
+    """
+    _usrconf = emailConfig()
+    _message = mailer.Message(From=_usrconf.account['usr'],
+                              To=To,
+                              Subject=Subject,
+                              charset="utf-8")
+    _message.Html = _usrconf.html_model % {'body': Body}
+    if attach:
+        _message.attach(attach)
+
+    try:
+        _smtp_server = POP3_SMTP_IMAP().server[_usrconf.account['usr'].
+                                               split('@')[-1].
+                                               split('.')[0]
+                                               ]['smtp']
+    except:
+        raise KeyError("Your email server is not in carrot.POP3_SMTP_IMAP")
+
+    _sender = mailer.Mailer(host=_smtp_server['host'],
+                            usr=_usrconf.account['usr'],
+                            port=_smtp_server['port'][0],
+                            use_ssl=_smtp_server['ssl'],
+                            pwd=_usrconf.account['pwd'])
+    _sender.send(_message)  # send
+    return True
+
 
 if __name__ == '__main__':
     # print testFunc('adsf')
@@ -284,6 +341,11 @@ if __name__ == '__main__':
 
     # zipapp = zipManager('testzip.zip', 'w')
     # zipapp.write('*.csv')
-    # with zipManager('testzip.zip', 'a') as zipapp:
-    #     zipapp.write('*.csv')
+    # with zipManager('testzip.zip', 'w') as zipapp:
+    #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
+
+    print emailSender(['1032319360@qq.com', 'basicworld@126.com'],
+                      'hi im free',
+                      'come to <strong>me<strong>! at %s' % timeGenerator(),
+                      attach='./test.py')
     pass
