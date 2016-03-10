@@ -26,6 +26,6 @@ testFunc(): inner test function
 
 ### parrot.py:
 ----config file for rabbit
-----your personal email should save here if you need use rabbit.emailManager
+----your personal email should save here if you need use rabbit.emailSender
 
 ----todo: add more email server
