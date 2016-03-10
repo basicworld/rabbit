@@ -58,8 +58,18 @@ def timeGenerator(basetime='', timedelta=0, target_type='day'):
     @basetime: input a time or None by default
     @timedelta: basetime + timedelta = target_time
     @target_type: day, month, year, month_start
-    eg:
-    target_time = timeGenerator('2016-01-19', timedelta=-1, target_type='day')
+
+    # doctest
+    >>> timeGenerator(basetime='20160310')
+    '2016-03-10'
+    >>> timeGenerator(basetime='20160310', target_type='month_start')
+    '2016-03-01'
+    >>> timeGenerator(basetime='20160310', target_type='year')
+    '2016'
+    >>> timeGenerator(basetime='20160310', timedelta=-1, target_type='day')
+    '2016-03-09'
+    >>> timeGenerator(basetime='20160310', timedelta=30, target_type='month')
+    '2016-04'
     """
     if basetime:
         basetime = unicode(basetime).replace("-", "")
@@ -72,26 +82,39 @@ def timeGenerator(basetime='', timedelta=0, target_type='day'):
     else:
         basetime = datetime.datetime.now()
 
-    oneday = datetime.timedelta(days=1)
-    target_type_dict = {
+    _oneday = datetime.timedelta(days=1)
+    _target_type_dict = {
         'year': '%Y',
         'month': '%Y-%m',
         'month_start': '%Y-%m-01',
         'day': '%Y-%m-%d',
     }
-    target_time = basetime + oneday*timedelta
+    _target_time = basetime + _oneday*timedelta
     try:
-        return datetime.datetime.strftime(target_time,
-                                          target_type_dict[target_type])
+        return datetime.datetime.strftime(_target_time,
+                                          _target_type_dict[target_type])
     except KeyError as e:
-        raise KeyError("`target_type` must in %s" % target_type_dict.keys())
+        raise KeyError("`target_type` must in %s" % _target_type_dict.keys())
 
 
 def listConverter(*args, **kwargs):
     """
     listConverter(*args, **kwargs)
     Convert int, tuple, etc to list with target type if it can be
-    @kwargs['target_type']<var_type>: int, str, unicode, float, Deciaml
+    @kwargs['target_type']<var_type>: int, str(unicode), unicode,
+                                      float, Deciaml
+
+    # doctest
+    >>> listConverter(1, 2, 3)
+    [1, 2, 3]
+    >>> listConverter(1, 2, 3, target_type=float)
+    [1.0, 2.0, 3.0]
+    >>> listConverter(1, 2, 3, target_type=str)
+    [u'1', u'2', u'3']
+    >>> listConverter('a', 'b', '3', target_type=int)
+    ['a', 'b', 3]
+    >>> listConverter(1, 2, (3, 4), [[[5], 6], 7], )
+    [1, 2, 3, 4, 5, 6, 7]
     """
     target_type = kwargs['target_type'] if kwargs else None
     target_type = unicode if target_type in (str,) else target_type
@@ -110,22 +133,14 @@ def listConverter(*args, **kwargs):
     return _collector
 
 
-@timeDecorator
-def testFunc(*args, **kwargs):
-    """Test"""
-    return listConverter(1, 2, 3, 4, 5, (6, 7), ['a', 'b', 8],
-                         target_type=float)
-
-
 class csvManager(object):
     def __init__(self, filename, mode='wb', filedir='./'):
         """
         csvManager(self, filename, filedir='./', mode='wb')
-        wrapper csv model, adapt to Chinese
+        <class>: wrapper csv model, adapt to Chinese
         @filename<str>: file name
         @mode<str>: open_mode
         @filedir<str>: filedir to save file
-
         """
         # makedirs if not exsit
         os.makedirs(filedir) if not os.path.isdir(filedir) else True
@@ -146,6 +161,9 @@ class csvManager(object):
             self._writer.writerow(items)
 
     def close(self):
+        """
+        use it when you want to close it manually
+        """
         if not self._file.closed:
             self._file.close()
 
@@ -164,7 +182,7 @@ class mysqlManager(object):
     def __init__(self, host, user, passwd, db, port=3306, charset='utf8'):
         """
         mysqlManager(self, host, user, passwd, db, port=3306, charset='utf8')
-        Connect to mysql
+        <class>: Connect to mysql
         @host<str>
         @user<str>
         @passwd<str>
@@ -199,6 +217,9 @@ class mysqlManager(object):
             raise
 
     def close(self):
+        """
+        use it when you want to close it manually
+        """
         try:
             self._conn.commit()
             self._curs.close()
@@ -225,7 +246,7 @@ class zipManager(object):
     def __init__(self, filename, mode='r', filedir='./', pwd=''):
         """
         zipManager(filename, mode='w', filedir='./')
-        read, write, or rewrite zipfile
+        <class>: read, write, or rewrite zipfile
         @filedir + @filename = abspath of zipfile to save zipfile in r_mode
         @filename<str>: *.zip
         @mode<str>: r, w, a
@@ -250,12 +271,12 @@ class zipManager(object):
     #                         open_mode: %s" % self._mode)
     #     pass
 
-    def extractall(self, todir='./'):
-        if self._mode in ('w', 'a'):
-            raise TypeError("zipManager have no extract_function with \
-                            open_mode: %s" % self._mode)
-        os.makedirs(todir) if not os.path.isdir(todir) else None
-        # todo
+    # def extractall(self, todir='./'):
+    #     if self._mode in ('w', 'a'):
+    #         raise TypeError("zipManager have no extract_function with \
+    #                         open_mode: %s" % self._mode)
+    #     os.makedirs(todir) if not os.path.isdir(todir) else None
+    #     # todo
 
     def write(self, zipfile='.*', zipdir='./', zipfolder=False):
         """
@@ -286,6 +307,9 @@ class zipManager(object):
                     self._file.write(_item)
 
     def close(self):
+        """
+        use it when you want to close it manually
+        """
         try:
             self._file.close()
         except:
@@ -350,18 +374,15 @@ if __name__ == '__main__':
     # with mysqlManager('', '', '', '') as mysqlapp:
     #     mysqlapp.execute("select * from  u where u.id=", debug=True)
 
-    # print timeGenerator(target_type='month')
-    # print timeGenerator(20160201, target_type='year')
-    # print timeGenerator('2016-01-19', timedelta=-1)
-    # print timeGenerator(20160244)
-
     # zipapp = zipManager('testzip.zip', 'w')
     # zipapp.write('*.csv')
     # with zipManager('testzip.zip', 'w') as zipapp:
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
 
-    print emailSender(['1032319360@qq.com', 'basicworld@126.com'],
-                      u'hi im free 你好',
-                      'come to <strong>me</strong>! at %s' % timeGenerator(),
-                      attach='./carrot.py.default')
+    # print emailSender(['basicworld@126.com'],
+    #                   u'hi im free 你好',
+    #                   'come to <strong>me</strong>! at %s' % timeGenerator(),
+    #                   attach='./carrot.py.default')
+    import doctest
+    doctest.testmod()
     pass
