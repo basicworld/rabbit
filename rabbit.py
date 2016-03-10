@@ -88,6 +88,9 @@ def timeGenerator(basetime='', timedelta=0, target_type='day'):
         'month': '%Y-%m',
         'month_start': '%Y-%m-01',
         'day': '%Y-%m-%d',
+        'hour': '%Y-%m-%d %H:00:00',
+        'minute': '%Y-%m-%d %H:%M:00',
+        'second': '%Y-%m-%d %H:%M:%S',
     }
     _target_time = basetime + _oneday*timedelta
     try:
@@ -328,41 +331,53 @@ class zipManager(object):
         pass
 
 
-def emailSender(To, Subject, Body, attach=None):
+def emailSender(To, Subject, Body, attach=None, account_id=0):
     """
     easy to use mail
     @To<str_list>: list of users you want to send email
     @Subject<str>
     @Body<str>
     @attach<None or str of filename>
+    @account_id<int>: if multi account, you should select one.
+                      first one(id=0) by default
     """
     _usrconf = _emailConfig()
-    _message = mailer.Message(From=_usrconf.account['usr'],
+    _message = mailer.Message(From=_usrconf.account[account_id]['usr'],
                               To=To,
                               Subject=Subject,
                               charset="utf-8")
-    _message.Html = _usrconf.html_model % {'body': Body}
+    _body_dict = {'body': Body,
+                  'send_time': timeGenerator(target_type='minute'),
+                  'signature': _usrconf.account[account_id]['signature'],
+                  }
+    _message.Html = _usrconf.html_model
+    for key, value in _body_dict.items():
+        _message.Html = _message.Html.replace('<!--%s-->' % key, value)
     if attach:
         _message.attach(attach)
 
     try:
-        _smtp_server = POP3_SMTP_IMAP().server[_usrconf.account['usr'].
+        _smtp_server = POP3_SMTP_IMAP().server[_usrconf.
+                                               account[account_id]['usr'].
                                                split('@')[-1].
                                                split('.')[0]
                                                ]['smtp']
     except:
-        raise KeyError("Your email server is not in carrot.POP3_SMTP_IMAP")
+        raise KeyError("Cannot find server config or account in parrot")
 
     _sender = mailer.Mailer(host=_smtp_server['host'],
-                            usr=_usrconf.account['usr'],
+                            usr=_usrconf.account[account_id]['usr'],
                             port=_smtp_server['port'][0],
                             use_ssl=_smtp_server['ssl'],
-                            pwd=_usrconf.account['pwd'])
+                            pwd=_usrconf.account[account_id]['pwd'])
     _sender.send(_message)  # send
     return True
 
 
 if __name__ == '__main__':
+    # print timeGenerator(target_type='second')
+    # print timeGenerator(target_type='hour')
+    # print timeGenerator(target_type='minute')
     # print testFunc('adsf')
     # with csvManager('csvtest.csv', mode='ab') as csvapp:
     #     csvapp.writerow(1, 2, 3, 4, 5, '动物', )
@@ -380,9 +395,10 @@ if __name__ == '__main__':
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
 
     # print emailSender(['basicworld@126.com'],
-    #                   u'hi im free 你好',
+    #                   u'hi at %s' % timeGenerator(),
     #                   'come to <strong>me</strong>! at %s' % timeGenerator(),
-    #                   attach='./carrot.py.default')
+    #                   # attach='./carrot.py.default',
+    #                   account_id=1)
     import doctest
     doctest.testmod()
     pass
