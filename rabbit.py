@@ -145,6 +145,10 @@ class csvManager(object):
         if items:
             self._writer.writerow(items)
 
+    def close(self):
+        if not self._file.closed:
+            self._file.close()
+
     def __del__(self):
         if not self._file.closed:
             self._file.close()
@@ -193,6 +197,14 @@ class mysqlManager(object):
         except:
             print sql
             raise
+
+    def close(self):
+        try:
+            self._conn.commit()
+            self._curs.close()
+            self._conn.close()
+        except:
+            pass
 
     def __del__(self):
         try:
@@ -266,7 +278,6 @@ class zipManager(object):
                         path = os.path.join(dirname, filename)
                         entry = path[zipdir_len:]
                         self._file.write(path, entry)
-                        print (path, entry)
 
         #not zip folder
         else:
@@ -274,10 +285,15 @@ class zipManager(object):
                 if re.search(zipfile, _item) and os.path.isfile(_item):
                     self._file.write(_item)
 
+    def close(self):
+        try:
+            self._file.close()
+        except:
+            pass
+
     def __del__(self):
         try:
             self._file.close()
-            return {}
         except:
             pass
 
@@ -346,6 +362,6 @@ if __name__ == '__main__':
 
     print emailSender(['1032319360@qq.com', 'basicworld@126.com'],
                       'hi im free',
-                      'come to <strong>me<strong>! at %s' % timeGenerator(),
+                      'come to <strong>me</strong>! at %s' % timeGenerator(),
                       attach='./test.py')
     pass
