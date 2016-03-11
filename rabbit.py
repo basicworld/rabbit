@@ -432,7 +432,7 @@ if __name__ == '__main__':
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
     from carrot import EmailConfig
     body = EmailConfig().body
-    email_sender(To=['basicworld@126.com'],
+    email_sender(To=['admin@wlfei.com'],
                  Subject=u'Hello world from rabbit',
                  Body=body,
                  attach=None,
