@@ -8,16 +8,11 @@ __pycache__/
 
 # wlf: private file
 *.pyc
-*Test.py
 *.csv
-test/
-oxford.*
-txt/
+*.zip
+*test*
+txt
 pass/
-carrot.py
-
-
-
 
 # Distribution / packaging
 .Python

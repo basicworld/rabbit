@@ -22,6 +22,7 @@ import csv
 import glob
 import time
 import datetime
+import mimetypes
 import MySQLdb
 import zipfile
 import mailer
@@ -93,6 +94,7 @@ def time_generator(basetime='', timedelta=0, target_type='day'):
         'hour': '%Y-%m-%d %H:00:00',
         'minute': '%Y-%m-%d %H:%M:00',
         'second': '%Y-%m-%d %H:%M:%S',
+        'email_time': "%a, %d %b %Y %H:%M:%S %z",
     }
     _target_time = basetime + _oneday * timedelta
     try:
@@ -338,30 +340,58 @@ class ZipManager(object):
         pass
 
 
-def email_sender(To, Subject, Body, attach=None, account_id=0):
+@time_decorator
+def email_sender(To, Subject, Body, attach=None, Date=None,
+                 account_id=0, html_model=None, body_dict=None):
     """
     easy to use mail
     @To<str_list>: list of users you want to send email
     @Subject<str>
-    @Body<str>
-    @attach<None or str of filename>
+    @Body<str or fileObject>
+    @attach<None or str or filename>
     @account_id<int>: if multi account, you should select one.
                       first one(id=0) by default
+    @html_model<fileObject>: a html file, default use model in parrot
+    @body_dict<dict>: use to pack html_model
     """
     _usrconf = _EmailConfig()
     _message = mailer.Message(From=_usrconf.account[account_id]['usr'],
                               To=To,
                               Subject=Subject,
+                              Date=Date,
                               charset="utf-8")
-    _body_dict = {'body': Body,
-                  'send_time': time_generator(target_type='minute'),
-                  'signature': _usrconf.account[account_id]['signature'],
-                  }
-    _message.Html = _usrconf.html_model
+
+    def _body_convert(body):
+        _collector = ""
+        if os.path.isfile(body):
+            for line in open(body):
+                _collector += '<p>%s</p>' % line
+        else:
+            for line in body.replace('    ', '').split('\n'):
+                _collector += '<p>%s</p>' % line
+        return _collector
+
+    # html_model and body_dict should config together
+    if html_model and body_dict:
+        _body_dict = body_dict
+        _message.Html = open(html_model).read()
+    else:
+        _body_dict = {'body': _body_convert(Body),
+                      # 'send_time': time_generator(target_type='second'),
+                      'signature': _usrconf.account[account_id]['signature'],
+                      }
+        _message.Html = _usrconf.html_model
+
     for key, value in _body_dict.items():
         _message.Html = _message.Html.replace('<!--%s-->' % key, value)
     if attach:
-        _message.attach(attach)
+        ext = os.path.splitext('test.jpg')[-1]
+        mtype = mimetypes.types_map[ext]
+        _message.attach(filename=attach,
+                        cid=None,
+                        mimetype=mtype,
+                        content=None,
+                        charset=None)
 
     try:
         _smtp_server = Pop3SmtpImap().server[_usrconf.
@@ -370,7 +400,7 @@ def email_sender(To, Subject, Body, attach=None, account_id=0):
                                              split('.')[0]
                                              ]['smtp']
     except:
-        raise KeyError("Cannot find server config or account in parrot")
+        raise KeyError("Cannot find server config or account in parrot.py")
 
     _sender = mailer.Mailer(host=_smtp_server['host'],
                             usr=_usrconf.account[account_id]['usr'],
@@ -382,7 +412,7 @@ def email_sender(To, Subject, Body, attach=None, account_id=0):
 
 
 if __name__ == '__main__':
-    print time_generator(target_type='second')
+    print time_generator(target_type='email_time')
     # print time_generator(target_type='hour')
     # print time_generator(target_type='minute')
     # print test_func('adsf')
@@ -400,13 +430,15 @@ if __name__ == '__main__':
     # zipapp.write('*.csv')
     # with ZipManager('testzip.zip', 'w') as zipapp:
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
-
-    print email_sender(['basicworld@126.com'],
-                       u'hi at %s' % time_generator(),
-                       'come to <strong>me</strong>! at %s' %
-                       time_generator(),
-                       attach='./carrot.py.default',
-                       account_id=1)
-    import doctest
-    doctest.testmod()
+    from carrot import EmailConfig
+    body = EmailConfig().body
+    email_sender(To=['basicworld@126.com'],
+                 Subject=u'Hello world from rabbit',
+                 Body=body,
+                 attach=None,
+                 Date=time_generator(target_type='email_time'),
+                 account_id=0,
+                 html_model='')
+    # import doctest
+    # doctest.testmod()
     pass
