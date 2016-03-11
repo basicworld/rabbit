@@ -3,26 +3,29 @@ Author: basicworld@163.com
 Common methods that you can use in your project
 
 ### rabbit.py:
-----tool kit like python.collections
-----several quik, beautiful models include:
 
-timeDecorator(): decorator to test function running time
+Intro: tool kit
 
-timeGenerator(): create time
+Author: basicworld@163.com
 
-listConverter(): convert complex values to list
+time_decorator(): decorator
 
-csvManager(): wrapper csv model
+time_generator(): create time
 
-mysqlManager(): wrapper MySQLdb
+list_converter(): convert to list
 
-zipManager(): wrapper zipfile
+CsvManager(): wrapper csv model
 
-emailSender(): wrapper mailer
+MySQLManager(): wrapper MySQLdb
 
-testFunc(): inner test function
+ZipManager(): wrapper zipfile
 
-----todo: add function to convert complex dict to list
+email_sender(): wrapper mailer
+
+test_func(): inner test function
+
+
+----todo: auto set a carrot.py when run rabbit for the first time
 
 ### parrot.py:
 ----config file for rabbit

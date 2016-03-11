@@ -3,14 +3,16 @@
 Intro: tool kit
 Author: basicworld@163.com
 
-timeDecorator(): decorator
-timeGenerator(): create time
-listConverter(): convert to list
-csvManager(): wrapper csv model
-mysqlManager(): wrapper MySQLdb
-zipManager(): wrapper zipfile
-emailSender(): wrapper mailer
-testFunc(): inner test function
+time_decorator(): decorator
+time_generator(): create time
+list_converter(): convert to list
+CsvManager(): wrapper csv model
+MySQLManager(): wrapper MySQLdb
+ZipManager(): wrapper zipfile
+email_sender(): wrapper mailer
+test_func(): inner test function
+
+todo: auto set a carrot.py when run rabbit for the first time
 """
 
 import os
@@ -23,8 +25,8 @@ import datetime
 import MySQLdb
 import zipfile
 import mailer
-from carrot import emailConfig as _emailConfig
-from carrot import POP3_SMTP_IMAP
+from carrot import EmailConfig as _EmailConfig
+from carrot import Pop3SmtpImap
 from decimal import Decimal
 
 reload(sys)
@@ -32,12 +34,12 @@ sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 
-def timeDecorator(func):
+def time_decorator(func):
     """
-    timeDecorator(func)
+    time_decorator(func)
     A decorator to show running time of a func
     eg:
-    @timeDecorator
+    @time_decorator
     def func():
         ....
     """
@@ -51,24 +53,24 @@ def timeDecorator(func):
     return _wrapper
 
 
-def timeGenerator(basetime='', timedelta=0, target_type='day'):
+def time_generator(basetime='', timedelta=0, target_type='day'):
     """
-    timeGenerator(basetime='', timedelta=0, target_type='day')
+    time_generator(basetime='', timedelta=0, target_type='day')
     Generate time with target_type
     @basetime: input a time or None by default
     @timedelta: basetime + timedelta = target_time
     @target_type: day, month, year, month_start
 
     # doctest
-    >>> timeGenerator(basetime='20160310')
+    >>> time_generator(basetime='20160310')
     '2016-03-10'
-    >>> timeGenerator(basetime='20160310', target_type='month_start')
+    >>> time_generator(basetime='20160310', target_type='month_start')
     '2016-03-01'
-    >>> timeGenerator(basetime='20160310', target_type='year')
+    >>> time_generator(basetime='20160310', target_type='year')
     '2016'
-    >>> timeGenerator(basetime='20160310', timedelta=-1, target_type='day')
+    >>> time_generator(basetime='20160310', timedelta=-1, target_type='day')
     '2016-03-09'
-    >>> timeGenerator(basetime='20160310', timedelta=30, target_type='month')
+    >>> time_generator(basetime='20160310', timedelta=30, target_type='month')
     '2016-04'
     """
     if basetime:
@@ -92,7 +94,7 @@ def timeGenerator(basetime='', timedelta=0, target_type='day'):
         'minute': '%Y-%m-%d %H:%M:00',
         'second': '%Y-%m-%d %H:%M:%S',
     }
-    _target_time = basetime + _oneday*timedelta
+    _target_time = basetime + _oneday * timedelta
     try:
         return datetime.datetime.strftime(_target_time,
                                           _target_type_dict[target_type])
@@ -100,23 +102,23 @@ def timeGenerator(basetime='', timedelta=0, target_type='day'):
         raise KeyError("`target_type` must in %s" % _target_type_dict.keys())
 
 
-def listConverter(*args, **kwargs):
+def list_converter(*args, **kwargs):
     """
-    listConverter(*args, **kwargs)
+    list_converter(*args, **kwargs)
     Convert int, tuple, etc to list with target type if it can be
     @kwargs['target_type']<var_type>: int, str(unicode), unicode,
                                       float, Deciaml
 
     # doctest
-    >>> listConverter(1, 2, 3)
+    >>> list_converter(1, 2, 3)
     [1, 2, 3]
-    >>> listConverter(1, 2, 3, target_type=float)
+    >>> list_converter(1, 2, 3, target_type=float)
     [1.0, 2.0, 3.0]
-    >>> listConverter(1, 2, 3, target_type=str)
+    >>> list_converter(1, 2, 3, target_type=str)
     [u'1', u'2', u'3']
-    >>> listConverter('a', 'b', '3', target_type=int)
+    >>> list_converter('a', 'b', '3', target_type=int)
     ['a', 'b', 3]
-    >>> listConverter(1, 2, (3, 4), [[[5], 6], 7], )
+    >>> list_converter(1, 2, (3, 4), [[[5], 6], 7], )
     [1, 2, 3, 4, 5, 6, 7]
     """
     target_type = kwargs['target_type'] if kwargs else None
@@ -136,10 +138,10 @@ def listConverter(*args, **kwargs):
     return _collector
 
 
-class csvManager(object):
+class CsvManager(object):
     def __init__(self, filename, mode='wb', filedir='./'):
         """
-        csvManager(self, filename, filedir='./', mode='wb')
+        CsvManager(self, filename, filedir='./', mode='wb')
         <class>: wrapper csv model, adapt to Chinese
         @filename<str>: file name
         @mode<str>: open_mode
@@ -159,7 +161,7 @@ class csvManager(object):
         self._writer = csv.writer(self._file)
 
     def writerow(self, *args):
-        items = listConverter(args)
+        items = list_converter(args)
         if items:
             self._writer.writerow(items)
 
@@ -181,10 +183,10 @@ class csvManager(object):
         pass
 
 
-class mysqlManager(object):
+class MySQLManager(object):
     def __init__(self, host, user, passwd, db, port=3306, charset='utf8'):
         """
-        mysqlManager(self, host, user, passwd, db, port=3306, charset='utf8')
+        MySQLManager(self, host, user, passwd, db, port=3306, charset='utf8')
         <class>: Connect to mysql
         @host<str>
         @user<str>
@@ -194,13 +196,17 @@ class mysqlManager(object):
         @charset<str>: same in MySQLdb.connect
         """
         try:
-            self._conn = MySQLdb.connect(host=host, user=user, passwd=passwd,
-                                         db=db, port=port, charset=charset)
+            self._conn = MySQLdb.connect(host=host,
+                                         user=user,
+                                         passwd=passwd,
+                                         db=db,
+                                         port=port,
+                                         charset=charset)
             self._curs = self._conn.cursor()
         except:
             raise
 
-    @timeDecorator
+    @time_decorator
     def execute(self, sql, debug=False, **kwargs):
         """
         execute(self, sql, debug=False, **kwargs)
@@ -245,10 +251,10 @@ class mysqlManager(object):
         pass
 
 
-class zipManager(object):
+class ZipManager(object):
     def __init__(self, filename, mode='r', filedir='./', pwd=''):
         """
-        zipManager(filename, mode='w', filedir='./')
+        ZipManager(filename, mode='w', filedir='./')
         <class>: read, write, or rewrite zipfile
         @filedir + @filename = abspath of zipfile to save zipfile in r_mode
         @filename<str>: *.zip
@@ -260,7 +266,8 @@ class zipManager(object):
         self._pwd = pwd
         if self._mode in ('w', 'a'):
             os.path.makedirs(filedir) if not os.path.isdir(filedir) else None
-            self._file = zipfile.ZipFile(_full_filename, self._mode,
+            self._file = zipfile.ZipFile(_full_filename,
+                                         self._mode,
                                          zipfile.ZIP_DEFLATED)
         elif self._mode in ('r',):
                 self._file = zipfile(_full_filename, self._mode, pwd) if\
@@ -270,13 +277,13 @@ class zipManager(object):
 
     # def read(self):
     #     if self._mode in ('w', 'a'):
-    #         raise TypeError("zipManager have no write_function with \
+    #         raise TypeError("ZipManager have no write_function with \
     #                         open_mode: %s" % self._mode)
     #     pass
 
     # def extractall(self, todir='./'):
     #     if self._mode in ('w', 'a'):
-    #         raise TypeError("zipManager have no extract_function with \
+    #         raise TypeError("ZipManager have no extract_function with \
     #                         open_mode: %s" % self._mode)
     #     os.makedirs(todir) if not os.path.isdir(todir) else None
     #     # todo
@@ -290,7 +297,7 @@ class zipManager(object):
         @zipfolder<bool>: zip folder or not
         """
         if self._mode in ('r',):
-            raise TypeError("zipManager have no write_function with \
+            raise TypeError("ZipManager have no write_function with \
                             open_mode: %s" % self._mode)
 
         # zip folder
@@ -331,7 +338,7 @@ class zipManager(object):
         pass
 
 
-def emailSender(To, Subject, Body, attach=None, account_id=0):
+def email_sender(To, Subject, Body, attach=None, account_id=0):
     """
     easy to use mail
     @To<str_list>: list of users you want to send email
@@ -341,13 +348,13 @@ def emailSender(To, Subject, Body, attach=None, account_id=0):
     @account_id<int>: if multi account, you should select one.
                       first one(id=0) by default
     """
-    _usrconf = _emailConfig()
+    _usrconf = _EmailConfig()
     _message = mailer.Message(From=_usrconf.account[account_id]['usr'],
                               To=To,
                               Subject=Subject,
                               charset="utf-8")
     _body_dict = {'body': Body,
-                  'send_time': timeGenerator(target_type='minute'),
+                  'send_time': time_generator(target_type='minute'),
                   'signature': _usrconf.account[account_id]['signature'],
                   }
     _message.Html = _usrconf.html_model
@@ -357,11 +364,11 @@ def emailSender(To, Subject, Body, attach=None, account_id=0):
         _message.attach(attach)
 
     try:
-        _smtp_server = POP3_SMTP_IMAP().server[_usrconf.
-                                               account[account_id]['usr'].
-                                               split('@')[-1].
-                                               split('.')[0]
-                                               ]['smtp']
+        _smtp_server = Pop3SmtpImap().server[_usrconf.
+                                             account[account_id]['usr'].
+                                             split('@')[-1].
+                                             split('.')[0]
+                                             ]['smtp']
     except:
         raise KeyError("Cannot find server config or account in parrot")
 
@@ -375,30 +382,31 @@ def emailSender(To, Subject, Body, attach=None, account_id=0):
 
 
 if __name__ == '__main__':
-    # print timeGenerator(target_type='second')
-    # print timeGenerator(target_type='hour')
-    # print timeGenerator(target_type='minute')
-    # print testFunc('adsf')
-    # with csvManager('csvtest.csv', mode='ab') as csvapp:
+    print time_generator(target_type='second')
+    # print time_generator(target_type='hour')
+    # print time_generator(target_type='minute')
+    # print test_func('adsf')
+    # with CsvManager('csvtest.csv', mode='ab') as csvapp:
     #     csvapp.writerow(1, 2, 3, 4, 5, '动物', )
-    # csvapp = csvManager('csvtest.csv', mode='ab')
+    # csvapp = CsvManager('csvtest.csv', mode='ab')
     # csvapp.writerow(1, 2, 3, 4, 5, '动物', )
 
-    # mysqlapp = mysqlManager('', '', '', '')
+    # mysqlapp = MySQLManager('', '', '', '')
     # print mysqlapp.execute("select * from  u where u.id=")
-    # with mysqlManager('', '', '', '') as mysqlapp:
+    # with MySQLManager('', '', '', '') as mysqlapp:
     #     mysqlapp.execute("select * from  u where u.id=", debug=True)
 
-    # zipapp = zipManager('testzip.zip', 'w')
+    # zipapp = ZipManager('testzip.zip', 'w')
     # zipapp.write('*.csv')
-    # with zipManager('testzip.zip', 'w') as zipapp:
+    # with ZipManager('testzip.zip', 'w') as zipapp:
     #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
 
-    # print emailSender(['basicworld@126.com'],
-    #                   u'hi at %s' % timeGenerator(),
-    #                   'come to <strong>me</strong>! at %s' % timeGenerator(),
-    #                   # attach='./carrot.py.default',
-    #                   account_id=1)
+    print email_sender(['basicworld@126.com'],
+                       u'hi at %s' % time_generator(),
+                       'come to <strong>me</strong>! at %s' %
+                       time_generator(),
+                       attach='./carrot.py.default',
+                       account_id=1)
     import doctest
     doctest.testmod()
     pass
