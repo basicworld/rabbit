@@ -9,7 +9,7 @@ list_converter(): convert to list
 CsvManager(): wrapper csv model
 MySQLManager(): wrapper MySQLdb
 ZipManager(): wrapper zipfile
-email_sender(): wrapper mailer
+EmailSender(): wrapper mailer
 test_func(): inner test function
 
 todo: auto set a carrot.py when run rabbit for the first time
@@ -350,7 +350,7 @@ class ZipManager(object):
         pass
 
 
-class email_sender(object):
+class EmailSender(object):
     def __init__(self, **kwargs):
         """
         easy to use mail
@@ -607,7 +607,7 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
-    a        = email_sender()
+    a        = EmailSender()
     a.usr    = '@itprofessor.cn'
     a.to     = ['basicworld@126.com']
     a.attach = './rabbit.zip'
