@@ -22,12 +22,12 @@ class EmailConfig(object):
          },
         {'usr': '', 'pwd': '', 'signature': u''},
     ]
+    subject = "Hello world from rabbit"
     body = """Hello my friend,
-    This is a default html_type_email powered by <strong>rabbit</strong>.
-    <strong>rabbit</strong> is a tool kit for python, you can check \
-    rabbit.py for detail infomation.
-    Please feel free to contact me at basicworld@163.com if you have any idea \
-    or problem about <strong>rabbit</strong>.
+    You are seeing this content beacuse the message sender did not write \
+    anything in email body. Please contact him/her to confirm this email if \
+    you have any concern.
+
     Have a good day!
     """
     html_model = r"""<!DOCTYPE html>

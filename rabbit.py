@@ -3,7 +3,7 @@
 Intro: tool kit
 Author: basicworld@163.com
 
-time_decorator(): decorator
+function_performance_statistics(): decorator
 time_generator(): create time
 list_converter(): convert to list
 CsvManager(): wrapper csv model
@@ -35,23 +35,33 @@ sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 
-def time_decorator(func):
+def function_performance_statistics(trace_this=True):
     """
-    time_decorator(func)
+    function_performance_statistics(trace_this=True)
     A decorator to show running time of a func
+    @trace_this: print running_time or not
+
     eg:
-    @time_decorator
-    def func():
-        ....
+    @function_performance_statistics(trace_this=True)
+    def func...
     """
-    def _wrapper(*args, **kwargs):
-        _start_time = datetime.datetime.now()
-        _resp = func(*args, **kwargs)
-        _end_time = datetime.datetime.now()
-        _time_diff = (_end_time - _start_time).microseconds
-        print (u"<%s> spend %s \u03bcs." % (func.__name__, _time_diff))
-        return _resp
-    return _wrapper
+    from functools import wraps
+    if trace_this:
+        def time_decorator(func):
+            @wraps(func)
+            def _wrapper(*args, **kwargs):
+                _start_time = datetime.datetime.now()
+                _resp = func(*args, **kwargs)
+                _end_time = datetime.datetime.now()
+                _time_diff = (_end_time - _start_time).microseconds / 1000
+                print (u"<%s> used %s ms." % (func.__name__, _time_diff))
+                return _resp
+            return _wrapper
+    else:
+        @wraps(func)
+        def time_decorator(func):
+            return func
+    return time_decorator
 
 
 def time_generator(basetime='', timedelta=0, target_type='day'):
@@ -208,7 +218,7 @@ class MySQLManager(object):
         except:
             raise
 
-    @time_decorator
+    @function_performance_statistics()
     def execute(self, sql, debug=False, **kwargs):
         """
         execute(self, sql, debug=False, **kwargs)
@@ -340,27 +350,152 @@ class ZipManager(object):
         pass
 
 
-@time_decorator
-def email_sender(To, Subject, Body, attach=None, Date=None,
-                 account_id=0, html_model=None, body_dict=None):
-    """
-    easy to use mail
-    @To<str_list>: list of users you want to send email
-    @Subject<str>
-    @Body<str or fileObject>
-    @attach<None or str or filename>
-    @account_id<int>: if multi account, you should select one.
-                      first one(id=0) by default
-    @html_model<fileObject>: a html file, default use model in parrot
-    @body_dict<dict>: use to pack html_model
-    """
-    _usrconf = _EmailConfig()
-    _message = mailer.Message(From=_usrconf.account[account_id]['usr'],
-                              To=To,
-                              Subject=Subject,
-                              Date=Date,
-                              charset="utf-8")
+class email_sender(object):
+    def __init__(self, **kwargs):
+        """
+        easy to use mail
+        @To<str_list>: list of users you want to send email
+        @Subject<str>
+        @Body<str or fileObject>
+        @attach<None or str or filename>
+        @html_model<fileObject>: a html file, default use model in parrot
+        @body_wrapper<dict>: use to pack html_model
+        @show_warning<str>: show warning msg or not
+        """
+        params = {}
+        for key, value in kwargs.items():
+            params[key.lower()] = value
 
+        # message setting
+        self._to               = params.get('to', None)
+        self._subject          = params.get('subject', None)
+        self._body             = params.get('body', None)
+        self._attach           = params.get('attach', None)
+        # self._date           = params.get('date', None)
+        # self._html           = params.get('html', None)
+        # self._from           = params.get('from', None)
+        # self._rto            = params.get('rto', None)
+        # self._cc             = params.get('cc', None)
+        # self._bcc            = params.get('bcc', None)
+        # self._charset        = params.get('charset', None)
+        # self._headers        = params.get('headers', None)
+        self._html_model       = params.get('html_model', None)
+        self._body_wrapper     = params.get('body_wrapper', None)
+
+        # mailer setting
+        self._host             = params.get('host', None)
+        self._port             = params.get('port', None)
+        self._use_ssl          = params.get('use_ssl', None)
+        self._usr              = params.get('usr', None)
+        self._pwd              = params.get('pwd', None)
+        # self._use_tls        = params.get('use_tls', False)
+        # self._use_plain_auth = params.get('use_plain_auth', False)
+        # self._timeout        = params.get('timeout', None)
+
+        # signature
+        self._signature        = params.get('signature', None)
+        self._show_warning     = params.get('show_warning', False)
+
+        # load config data from carrot
+        self._emailconfig      = _EmailConfig()
+        self._serverconfig     = Pop3SmtpImap().server
+
+    @function_performance_statistics(True)
+    def send(self):
+        """send email"""
+        if not self.check():
+            return False
+
+        self._build_message()
+        _sender = mailer.Mailer(host=self._host,
+                                usr=self._usr,
+                                port=self._port,
+                                use_ssl=self._use_ssl,
+                                pwd=self._pwd)
+        _sender.send(self._message)
+        return True
+
+    @property
+    def usr(self):
+        return self._usr, self._pwd, self._signature
+
+    @usr.setter
+    def usr(self, usr):
+        try:
+            _server       = re.findall('@(.*)\.', usr)[0]
+            self._host    = self._serverconfig[_server]['smtp']['host']
+            self._port    = self._serverconfig[_server]['smtp']['port'][0]
+            self._use_ssl = self._serverconfig[_server]['smtp']['ssl']
+        except:
+            raise
+        usr_in_carrot = False
+        for acc in self._emailconfig.account:
+            if usr in acc['usr']:
+                usr_in_carrot   = True
+                self._usr       = acc['usr']
+                self._pwd       = acc['pwd']
+                self._signature = acc['signature']
+
+        if not usr_in_carrot:
+            self._usr       = usr
+            self._pwd       = pwd
+            self._signature = signature
+
+    @property
+    def attach(self):
+        return self._attach
+
+    @attach.setter
+    def attach(self, value):
+        """append attach one by one"""
+        if not os.path.isfile(value):
+            print('Attach %s not exsit' % value)
+        else:
+            self._attach = (value)
+
+    @property
+    def to(self):
+        return self._to
+
+    @to.setter
+    def to(self, value):
+        if isinstance(value, (str, unicode)):
+            value = [value]
+        self._to = self._setter(value, check_type=('@', list))
+
+    @property
+    def subject(self):
+        return self._subject
+
+    @subject.setter
+    def subject(self, value):
+        self._subject = self._setter(value, check_type=(str, unicode))
+
+    @property
+    def body(self):
+        return self._body
+
+    @body.setter
+    def body(self, value):
+        self._body = self._setter(value, check_type=(str, unicode))
+
+    @property
+    def body_wrapper(self):
+        return self._body_wrapper
+
+    @body_wrapper.setter
+    def body_wrapper(self, value):
+        self._body_wrapper = self._setter(value, check_type=dict)
+
+    @property
+    def html_model(self):
+        return self._html_model
+
+    @html_model.setter
+    def html_model(self, value):
+        self._html_model = self._setter(value, check_type='file')
+
+    @staticmethod
     def _body_convert(body):
         _collector = ""
         if os.path.isfile(body):
@@ -371,74 +506,110 @@ def email_sender(To, Subject, Body, attach=None, Date=None,
                 _collector += '<p>%s</p>' % line
         return _collector
 
-    # html_model and body_dict should config together
-    if html_model and body_dict:
-        _body_dict = body_dict
-        _message.Html = open(html_model).read()
-    else:
-        _body_dict = {'body': _body_convert(Body),
-                      # 'send_time': time_generator(target_type='second'),
-                      'signature': _usrconf.account[account_id]['signature'],
-                      }
-        _message.Html = _usrconf.html_model
+    def check(self):
+        need_set_para = 0
 
-    for key, value in _body_dict.items():
-        _message.Html = _message.Html.replace('<!--%s-->' % key, value)
-    if attach:
-        ext = os.path.splitext('test.jpg')[-1]
-        mtype = mimetypes.types_map[ext]
-        _message.attach(filename=attach,
-                        cid=None,
-                        mimetype=mtype,
-                        content=None,
-                        charset=None)
+        # usr pwd to must be set
+        error_msg = ""
+        if not (self._usr):
+            error_msg     += '[Error] usr is empty%s' % os.linesep
+            need_set_para += 1
+        if not (self._pwd):
+            error_msg     += '[Error] pwd is empty%s' % os.linesep
+            need_set_para += 1
+        if not (self._to):
+            error_msg     += '[Error] To(reciever) is empty%s' % os.linesep
+            need_set_para += 1
 
-    try:
-        _smtp_server = Pop3SmtpImap().server[_usrconf.
-                                             account[account_id]['usr'].
-                                             split('@')[-1].
-                                             split('.')[0]
-                                             ]['smtp']
-    except:
-        raise KeyError("Cannot find server config or account in parrot.py")
+        # use default if not exit
+        warning_msg = ""
+        if not (self._html_model):
+            warning_msg += """[Warning] HTML_model is empty, using \
+                default%s""" % os.linesep
+            self._html_model = self._emailconfig.html_model
+        if not (self._body):
+            warning_msg += """[Warning] body is empty, using default%s""" \
+                % os.linesep
+            self._body = self._emailconfig.body
+        if not (self._subject):
+            warning_msg += """[Warning] subject is empty, using default%s""" \
+                % os.linesep
+            self._subject = "Hello world from rabbit"
 
-    _sender = mailer.Mailer(host=_smtp_server['host'],
-                            usr=_usrconf.account[account_id]['usr'],
-                            port=_smtp_server['port'][0],
-                            use_ssl=_smtp_server['ssl'],
-                            pwd=_usrconf.account[account_id]['pwd'])
-    _sender.send(_message)  # send
-    return True
+        if need_set_para:
+            print 'At least %s parameters should be set:' % need_set_para
+            print error_msg
+            if self._show_warning:
+                print warning_msg
+            return False
+        return True
+
+    def _build_message(self):
+        """build mesage"""
+        self._message         = mailer.Message(charset="utf-8")
+        self._message.From    = self._usr
+        self._message.To      = self._to
+        self._message.Subject = self._subject
+
+        if not self._body_wrapper:
+            self._body_wrapper = {
+                'body': self._body_convert(self._body),
+                'signature': self._signature,
+                'send_time': '',
+            }
+
+        for key, value in self._body_wrapper.items():
+            self._html_model = self._html_model.replace('<!--%s-->' %
+                                                        key, value)
+        self._message.Html = self._html_model
+        if self._attach:
+            ext = os.path.splitext(self._attach)[-1]
+            mtype = mimetypes.types_map[ext]
+            self._message.attach(filename=self._attach,
+                                 cid=None,
+                                 mimetype=mtype,
+                                 content=None,
+                                 charset=None)
+
+    @staticmethod
+    def _setter(value, check_type=False):
+        """for *.setter"""
+        try:
+            if check_type:
+                if check_type in ('@', 'email'):
+                    if not (isinstance(value, (str, unicode)) and
+                            '@' in value):
+                        raise ValueError
+                    return value
+                elif check_type in (('@', list), ('email', list)):
+                    for val in value:
+                        if not (isinstance(val, (str, unicode)) and
+                                '@' in val):
+                            raise ValueError
+                    return value
+                elif check_type in ('file', ):
+                    if not os.path.isfile(value):
+                        raise ValueError
+                    return open(value).read()
+                else:
+                    if not isinstance(value, check_type):
+                        raise ValueError
+                    return value
+            else:
+                return value
+        except ValueError as e:
+            return None
+
+
+@function_performance_statistics(True)
+def test_func(x, y):
+    return x + y
 
 
 if __name__ == '__main__':
-    print time_generator(target_type='email_time')
-    # print time_generator(target_type='hour')
-    # print time_generator(target_type='minute')
-    # print test_func('adsf')
-    # with CsvManager('csvtest.csv', mode='ab') as csvapp:
-    #     csvapp.writerow(1, 2, 3, 4, 5, '动物', )
-    # csvapp = CsvManager('csvtest.csv', mode='ab')
-    # csvapp.writerow(1, 2, 3, 4, 5, '动物', )
-
-    # mysqlapp = MySQLManager('', '', '', '')
-    # print mysqlapp.execute("select * from  u where u.id=")
-    # with MySQLManager('', '', '', '') as mysqlapp:
-    #     mysqlapp.execute("select * from  u where u.id=", debug=True)
-
-    # zipapp = ZipManager('testzip.zip', 'w')
-    # zipapp.write('*.csv')
-    # with ZipManager('testzip.zip', 'w') as zipapp:
-    #     zipapp.write('.*', zipdir='./pass', zipfolder=True)
-    from carrot import EmailConfig
-    body = EmailConfig().body
-    email_sender(To=['admin@wlfei.com'],
-                 Subject=u'Hello world from rabbit',
-                 Body=body,
-                 attach=None,
-                 Date=time_generator(target_type='email_time'),
-                 account_id=0,
-                 html_model='')
-    # import doctest
-    # doctest.testmod()
-    pass
+    a        = email_sender()
+    a.usr    = '@itprofessor.cn'
+    a.to     = ['basicworld@126.com']
+    a.attach = './rabbit.zip'
+    # a.attach = './carrot.py'
+    a.send()
