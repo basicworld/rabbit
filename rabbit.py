@@ -416,30 +416,38 @@ class EmailSender(object):
         return True
 
     @property
+    def pwd(self):
+        print self._pwd
+
+    @pwd.setter
+    def pwd(self, value):
+        """todo"""
+        pass
+
+    @property
     def usr(self):
         return self._usr, self._pwd, self._signature
 
     @usr.setter
-    def usr(self, usr):
+    def usr(self, value):
         try:
-            _server       = re.findall('@(.*)\.', usr)[0]
+            _server       = re.findall('@(.*)\.', value)[0]
             self._host    = self._serverconfig[_server]['smtp']['host']
             self._port    = self._serverconfig[_server]['smtp']['port'][0]
             self._use_ssl = self._serverconfig[_server]['smtp']['ssl']
         except:
-            raise
+            print "[Warning] Invalid usr, or mail server not config in carrot"
+            return False
         usr_in_carrot = False
         for acc in self._emailconfig.account:
-            if usr in acc['usr']:
+            if value in acc['usr']:
                 usr_in_carrot   = True
                 self._usr       = acc['usr']
                 self._pwd       = acc['pwd']
                 self._signature = acc['signature']
 
         if not usr_in_carrot:
-            self._usr       = usr
-            self._pwd       = pwd
-            self._signature = signature
+            self._usr = value
 
     @property
     def attach(self):
