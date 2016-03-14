@@ -12,7 +12,10 @@ ZipManager(): wrapper zipfile
 EmailSender(): wrapper mailer
 test_func(): inner test function
 
-todo: auto set a carrot.py when run rabbit for the first time
+use email:
+python rabbit.py -e <your_email>
+
+todo: write img_getter() to save img from url
 """
 
 import os
@@ -403,7 +406,7 @@ class EmailSender(object):
     @function_performance_statistics(True)
     def send(self):
         """send email"""
-        if not self.check():
+        if not self._check():
             return False
 
         self._build_message()
@@ -412,7 +415,11 @@ class EmailSender(object):
                                 port=self._port,
                                 use_ssl=self._use_ssl,
                                 pwd=self._pwd)
-        _sender.send(self._message)
+        try:
+            _sender.send(self._message)
+        except:
+            print "[Error] Something wrong when sending email"
+            return False
         return True
 
     @property
@@ -422,7 +429,7 @@ class EmailSender(object):
     @pwd.setter
     def pwd(self, value):
         """todo"""
-        pass
+        self._pwd = str(value)
 
     @property
     def usr(self):
@@ -455,11 +462,13 @@ class EmailSender(object):
 
     @attach.setter
     def attach(self, value):
-        """append attach one by one"""
-        if not os.path.isfile(value):
-            print('Attach %s not exsit' % value)
+        """
+        todo: add attach to Mesage diractly
+        """
+        if not os.path.isfile(value) and self._show_warning:
+            print('[Error] Attach %s not exsit' % value)
         else:
-            self._attach = (value)
+            self._attach = value
 
     @property
     def to(self):
@@ -514,35 +523,35 @@ class EmailSender(object):
                 _collector += '<p>%s</p>' % line
         return _collector
 
-    def check(self):
+    def _check(self):
         need_set_para = 0
+        # use default if not exit
+        warning_msg = ""
+        if not (self._usr):
+            warning_msg += """[Warning] usr is empty, \
+                use default usr%s""" % os.linesep
+            self.usr = "test@itprofessor.cn"
+        if not (self._html_model):
+            warning_msg += """[Warning] HTML_model is empty, \
+                use default model%s""" % os.linesep
+            self._html_model = self._emailconfig.html_model
+        if not (self._body):
+            warning_msg += """[Warning] body is empty, \
+                use default%s""" % os.linesep
+            self._body = self._emailconfig.body
+        if not (self._subject):
+            warning_msg += """[Warning] subject is empty, \
+                use default%s""" % os.linesep
+            self._subject = "Hello world from rabbit"
 
         # usr pwd to must be set
         error_msg = ""
-        if not (self._usr):
-            error_msg     += '[Error] usr is empty%s' % os.linesep
-            need_set_para += 1
         if not (self._pwd):
             error_msg     += '[Error] pwd is empty%s' % os.linesep
             need_set_para += 1
         if not (self._to):
             error_msg     += '[Error] To(reciever) is empty%s' % os.linesep
             need_set_para += 1
-
-        # use default if not exit
-        warning_msg = ""
-        if not (self._html_model):
-            warning_msg += """[Warning] HTML_model is empty, using \
-                default%s""" % os.linesep
-            self._html_model = self._emailconfig.html_model
-        if not (self._body):
-            warning_msg += """[Warning] body is empty, using default%s""" \
-                % os.linesep
-            self._body = self._emailconfig.body
-        if not (self._subject):
-            warning_msg += """[Warning] subject is empty, using default%s""" \
-                % os.linesep
-            self._subject = "Hello world from rabbit"
 
         if need_set_para:
             print 'At least %s parameters should be set:' % need_set_para
@@ -615,9 +624,16 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
-    a        = EmailSender()
-    a.usr    = '@itprofessor.cn'
-    a.to     = ['basicworld@126.com']
-    a.attach = './rabbit.zip'
-    # a.attach = './carrot.py'
-    a.send()
+    from optparse import OptionParser
+    usage = """%prog [-e <email>]"""
+    version = "%prog 1.0"
+    parser = OptionParser(usage=usage)
+    parser.add_option('-e', '--email',
+                      dest='email',
+                      help="-e usrname@example.com",
+                      action="store_true")
+    (options, args) = parser.parse_args()
+    if options.email and args:
+        a    = EmailSender()
+        a.to = args
+        a.send()

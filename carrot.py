@@ -24,11 +24,11 @@ class EmailConfig(object):
     ]
     subject = "Hello world from rabbit"
     body = """Hello my friend,
-    You are seeing this content beacuse the message sender did not write \
-    anything in email body. Please contact him/her to confirm this email if \
-    you have any concern.
-
-    Have a good day!
+    This is an illustrate email from <strong>rabbit</strong>--\
+    an easy to use tool kit for python coding. Click \
+    <a href="https://github.com/basicworld/rabbit">here</a>\
+     for more information.
+    Thanks for your interest. Have a good day!
     """
     html_model = r"""<!DOCTYPE html>
     <head>
