@@ -156,7 +156,7 @@ def list_converter(*args, **kwargs):
 class CsvManager(object):
     def __init__(self, filename, mode='wb', filedir='./'):
         """
-        CsvManager(self, filename, filedir='./', mode='wb')
+        CsvManager(filename, mode='wb', filedir='./')
         <class>: wrapper csv model, adapt to Chinese
         @filename<str>: file name
         @mode<str>: open_mode
@@ -171,7 +171,8 @@ class CsvManager(object):
         self._file = open(_full_filename, mode)
 
         # adapt to Chinese
-        self._file.write('\xEF\xBB\xBF') if _write_bom else None
+        if _write_bom or mode.startswith('w'):
+            self._file.write('\xEF\xBB\xBF')
 
         self._writer = csv.writer(self._file)
 
