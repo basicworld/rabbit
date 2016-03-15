@@ -20,7 +20,6 @@ todo: write img_getter() to save img from url
 
 import os
 import re
-import sys
 import csv
 import glob
 import time
@@ -33,6 +32,7 @@ from carrot import EmailConfig as _EmailConfig
 from carrot import Pop3SmtpImap
 from decimal import Decimal
 
+import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
@@ -50,7 +50,7 @@ def function_performance_statistics(trace_this=True):
     """
     from functools import wraps
     if trace_this:
-        def time_decorator(func):
+        def _time_decorator(func):
             @wraps(func)
             def _wrapper(*args, **kwargs):
                 _start_time = datetime.datetime.now()
@@ -62,9 +62,9 @@ def function_performance_statistics(trace_this=True):
             return _wrapper
     else:
         @wraps(func)
-        def time_decorator(func):
+        def _time_decorator(func):
             return func
-    return time_decorator
+    return _time_decorator
 
 
 def time_generator(basetime='', timedelta=0, target_type='day'):
@@ -107,7 +107,7 @@ def time_generator(basetime='', timedelta=0, target_type='day'):
         'hour': '%Y-%m-%d %H:00:00',
         'minute': '%Y-%m-%d %H:%M:00',
         'second': '%Y-%m-%d %H:%M:%S',
-        'email_time': "%a, %d %b %Y %H:%M:%S %z",
+        'full_time': "%a, %d %b %Y %H:%M:%S %z",
     }
     _target_time = basetime + _oneday * timedelta
     try:
@@ -163,6 +163,7 @@ class CsvManager(object):
         @filedir<str>: filedir to save file
         """
         # makedirs if not exsit
+        filedir = os.path.abspath(filedir)
         os.makedirs(filedir) if not os.path.isdir(filedir) else True
         # create csv file
         filename += '.csv' if not filename.endswith('.csv') else ''
@@ -171,7 +172,7 @@ class CsvManager(object):
         self._file = open(_full_filename, mode)
 
         # adapt to Chinese
-        if _write_bom or mode.startswith('w'):
+        if _write_bom:
             self._file.write('\xEF\xBB\xBF')
 
         self._writer = csv.writer(self._file)
@@ -371,38 +372,42 @@ class EmailSender(object):
             params[key.lower()] = value
 
         # message setting
-        self._to               = params.get('to', None)
-        self._subject          = params.get('subject', None)
-        self._body             = params.get('body', None)
-        self._attach           = params.get('attach', None)
-        # self._date           = params.get('date', None)
-        # self._html           = params.get('html', None)
-        # self._from           = params.get('from', None)
-        # self._rto            = params.get('rto', None)
-        # self._cc             = params.get('cc', None)
-        # self._bcc            = params.get('bcc', None)
-        # self._charset        = params.get('charset', None)
-        # self._headers        = params.get('headers', None)
-        self._html_model       = params.get('html_model', None)
-        self._body_wrapper     = params.get('body_wrapper', None)
+        self._to           = params.get('to', None)
+        self._subject      = params.get('subject', None)
+        self._body         = params.get('body', None)
+        self._attach       = params.get('attach', None)
+        # self._date
+        # self._html
+        # self._from
+        # self._rto
+        # self._cc
+        # self._bcc
+        # self._charset
+        # self._headers
+        self._html_model   = params.get('html_model', None)
+        self._body_wrapper = params.get('body_wrapper', None)
 
         # mailer setting
-        self._host             = params.get('host', None)
-        self._port             = params.get('port', None)
-        self._use_ssl          = params.get('use_ssl', None)
-        self._usr              = params.get('usr', None)
-        self._pwd              = params.get('pwd', None)
-        # self._use_tls        = params.get('use_tls', False)
-        # self._use_plain_auth = params.get('use_plain_auth', False)
-        # self._timeout        = params.get('timeout', None)
+        self._host         = params.get('host', None)
+        self._port         = params.get('port', None)
+        self._use_ssl      = params.get('use_ssl', None)
+        self._usr          = params.get('usr', None)
+        self._pwd          = params.get('pwd', None)
+        # self._use_tls
+        # self._use_plain_auth
+        # self._timeout
 
         # signature
-        self._signature        = params.get('signature', None)
-        self._show_warning     = params.get('show_warning', False)
+        self._signature    = params.get('signature', None)
+        self._show_warning = params.get('show_warning', False)
 
         # load config data from carrot
-        self._emailconfig      = _EmailConfig()
-        self._serverconfig     = Pop3SmtpImap().server
+        self._emailconfig  = _EmailConfig()
+        self._serverconfig = Pop3SmtpImap().server
+
+        # message
+        _date              = time_generator(target_type='full_time')
+        self._message      = mailer.Message(Date=_date, charset="utf-8")
 
     @function_performance_statistics(True)
     def send(self):
@@ -469,7 +474,7 @@ class EmailSender(object):
         if not os.path.isfile(value) and self._show_warning:
             print('[Error] Attach %s not exsit' % value)
         else:
-            self._attach = value
+            self._message.attach(value)
 
     @property
     def to(self):
@@ -564,7 +569,6 @@ class EmailSender(object):
 
     def _build_message(self):
         """build mesage"""
-        self._message         = mailer.Message(charset="utf-8")
         self._message.From    = self._usr
         self._message.To      = self._to
         self._message.Subject = self._subject
@@ -637,4 +641,8 @@ if __name__ == '__main__':
     if options.email and args:
         a    = EmailSender()
         a.to = args
+        a.attach = './carrot.py'
+        a.attach = './rabbit.py'
         a.send()
+    else:
+        raise ValueError("python rabbit.py -e <your_email>")
