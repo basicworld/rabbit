@@ -641,8 +641,8 @@ if __name__ == '__main__':
     if options.email and args:
         a    = EmailSender()
         a.to = args
-        a.attach = './carrot.py'
-        a.attach = './rabbit.py'
+        # a.attach = './carrot.py'
+        # a.attach = './rabbit.py'
         a.send()
     else:
         raise ValueError("python rabbit.py -e <your_email>")
