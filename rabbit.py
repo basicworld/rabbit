@@ -5,17 +5,19 @@ Author: basicworld@163.com
 
 function_performance_statistics(): decorator
 time_generator(): create time
-list_converter(): convert to list
+lister(): convert to list
 CsvManager(): wrapper csv model
 MySQLManager(): wrapper MySQLdb
 ZipManager(): wrapper zipfile
-EmailSender(): wrapper mailer
+EmailManager(): wrapper mailer
 test_func(): inner test function
 
 use email:
 python rabbit.py -e <your_email>
 
 todo: write img_getter() to save img from url
+todo: write csv2xls() to convert csv to xls
+todo: url2ip() to convert url to ip
 """
 
 import os
@@ -28,6 +30,7 @@ import mimetypes
 import MySQLdb
 import zipfile
 import mailer
+import xlwt
 from carrot import EmailConfig as _EmailConfig
 from carrot import Pop3SmtpImap
 from decimal import Decimal
@@ -117,23 +120,23 @@ def time_generator(basetime='', timedelta=0, target_type='day'):
         raise KeyError("`target_type` must in %s" % _target_type_dict.keys())
 
 
-def list_converter(*args, **kwargs):
+def lister(*args, **kwargs):
     """
-    list_converter(*args, **kwargs)
+    lister(*args, **kwargs)
     Convert int, tuple, etc to list with target type if it can be
     @kwargs['target_type']<var_type>: int, str(unicode), unicode,
                                       float, Deciaml
 
     # doctest
-    >>> list_converter(1, 2, 3)
+    >>> lister(1, 2, 3)
     [1, 2, 3]
-    >>> list_converter(1, 2, 3, target_type=float)
+    >>> lister(1, 2, 3, target_type=float)
     [1.0, 2.0, 3.0]
-    >>> list_converter(1, 2, 3, target_type=str)
+    >>> lister(1, 2, 3, target_type=str)
     [u'1', u'2', u'3']
-    >>> list_converter('a', 'b', '3', target_type=int)
+    >>> lister('a', 'b', '3', target_type=int)
     ['a', 'b', 3]
-    >>> list_converter(1, 2, (3, 4), [[[5], 6], 7], )
+    >>> lister(1, 2, (3, 4), [[[5], 6], 7], )
     [1, 2, 3, 4, 5, 6, 7]
     """
     target_type = kwargs['target_type'] if kwargs else None
@@ -153,6 +156,94 @@ def list_converter(*args, **kwargs):
     return _collector
 
 
+def csv2xls(filename):
+    """
+    todo
+    given a csv file, convert to xls and save at the same dir
+    need: abspath, dirname, delete csv or not
+    """
+    _full_filename = os.path.abspath(filename)
+    _xls_name = re.sub('\.*$', '.xls', _full_filename, 1)
+    xlsapp = XlsManager(_xls_name)
+    #todo
+
+    pass
+
+
+class XlsManager(object):
+    def __init__(self, filename, mode='w', filedir='./'):
+        """
+        XlsManager(filename, mode='w', filedir='./')
+        write xls
+        """
+        self._file = xlwt.Workbook()
+        self._is_open = True
+        # makedirs if not exsit
+        filedir = os.path.abspath(filedir)
+        os.makedirs(filedir) if not os.path.isdir(filedir) else True
+        # create csv file
+        filename += '.xls' if not filename.endswith('.xls') else ''
+        self._full_filename = os.path.join(filedir, filename)
+
+        self._style = xlwt.XFStyle()
+        _font = xlwt.Font()
+        _font.name = "SimSun"  # 'Times New Roman'
+        _font.height = 220
+        _font.charset = xlwt.Font.CHARSET_SYS_DEFAULT
+        self._style.font = _font
+
+        # num of sheet
+        self._sheet_count = 0
+
+        # create default sheet
+        self._sheet_count += 1
+        # add_sheet(sheetname, cell_overwrite_ok=False)
+        self._sheet = self._file.add_sheet('sheet%s' % self._sheet_count,
+                                           cell_overwrite_ok=True)
+        self._row = 0
+        self._col = 0
+
+    def add_sheet(self):
+        """
+        sheet name start from sheet2
+        """
+        self._sheet_count += 1
+        self._sheet = self._file.add_sheet('sheet%s' % self._sheet_count,
+                                           cell_overwrite_ok=True)
+        self._row = 0
+        self._col = 0
+
+    def writerow(self, *args):
+        # write(r, c, label='', style=<xlwt.Style.XFStyle object>)
+        items = lister(args, target_type=unicode)
+        if items:
+            for col, item in enumerate(items):
+                self._sheet.write(self._row, col, item, self._style)
+        self._row += 1
+        self._col = col + 1
+
+    def close(self):
+        """
+        save manually
+        """
+        # save(filename_or_stream)
+        if self._is_open:
+            self._file.save(self._full_filename)
+            self._is_open = False
+
+    def __del__(self):
+        # save(filename_or_stream)
+        if self._is_open:
+            self._file.save(self._full_filename)
+            self._is_open = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *unused):
+        pass
+
+
 class CsvManager(object):
     def __init__(self, filename, mode='wb', filedir='./'):
         """
@@ -167,9 +258,9 @@ class CsvManager(object):
         os.makedirs(filedir) if not os.path.isdir(filedir) else True
         # create csv file
         filename += '.csv' if not filename.endswith('.csv') else ''
-        _full_filename = os.path.join(filedir, filename)
-        _write_bom = False if os.path.isfile(_full_filename) else True
-        self._file = open(_full_filename, mode)
+        self._full_filename = os.path.join(filedir, filename)
+        _write_bom = False if os.path.isfile(self._full_filename) else True
+        self._file = open(self._full_filename, mode)
 
         # adapt to Chinese
         if _write_bom:
@@ -178,7 +269,7 @@ class CsvManager(object):
         self._writer = csv.writer(self._file)
 
     def writerow(self, *args):
-        items = list_converter(args)
+        items = lister(args)
         if items:
             self._writer.writerow(items)
 
@@ -188,6 +279,15 @@ class CsvManager(object):
         """
         if not self._file.closed:
             self._file.close()
+
+    def xlsx(self):
+        """
+        todo
+        convert csv file to xls file
+        must be used after csv file closed
+        """
+        self.close()
+        return self._full_filename
 
     def __del__(self):
         if not self._file.closed:
@@ -629,20 +729,25 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
-    from optparse import OptionParser
-    usage = """%prog [-e <email>]"""
-    version = "%prog 1.0"
-    parser = OptionParser(usage=usage)
-    parser.add_option('-e', '--email',
-                      dest='email',
-                      help="-e usrname@example.com",
-                      action="store_true")
-    (options, args) = parser.parse_args()
-    if options.email and args:
-        a    = EmailSender()
-        a.to = args
-        # a.attach = './carrot.py'
-        # a.attach = './rabbit.py'
-        a.send()
-    else:
-        raise ValueError("python rabbit.py -e <your_email>")
+    # from optparse import OptionParser
+    # usage = """%prog [-e <email>]"""
+    # version = "%prog 1.0"
+    # parser = OptionParser(usage=usage)
+    # parser.add_option('-e', '--email',
+    #                   dest='email',
+    #                   help="-e usrname@example.com",
+    #                   action="store_true")
+    # (options, args) = parser.parse_args()
+    # if options.email and args:
+    #     a    = EmailSender()
+    #     a.to = args
+    #     # a.attach = './carrot.py'
+    #     # a.attach = './rabbit.py'
+    #     a.send()
+    # else:
+    #     raise ValueError("python rabbit.py -e <your_email>")
+    xlsapp = XlsManager('test.xls', 'w')
+    xlsapp.writerow(1, 2, 3, 4, 5)
+    print xlsapp._row, xlsapp._col
+    xlsapp.writerow('王立飞')
+    xlsapp.close()
