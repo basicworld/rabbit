@@ -156,6 +156,26 @@ def lister(*args, **kwargs):
     return _collector
 
 
+def csv2xls(filename):
+    """
+    todo
+    given a csv file, convert to xls and save at the same dir
+    need: abspath, dirname, delete csv or not
+    """
+    _full_filename = os.path.abspath(filename)
+    try:
+        _csv_reader = csv.reader(open(_full_filename))
+    except:
+        raise ValueError('%s is not a csv_type file' % filename)
+    _xls_name = re.sub('\..*$', '.xls', _full_filename, 1)
+    _xlsapp = XlsManager(_xls_name)
+    for row in _csv_reader:
+        _xlsapp.writerow(row)
+
+    _xlsapp.close()
+    return True
+
+
 class CsvManager(object):
     def __init__(self, filename, mode='wb', filedir='./'):
         """
@@ -192,34 +212,16 @@ class CsvManager(object):
         if not self._file.closed:
             self._file.close()
 
-    @staticmethod
-    def csv2xls(filename):
-        """
-        todo
-        given a csv file, convert to xls and save at the same dir
-        need: abspath, dirname, delete csv or not
-        """
-        print filename
-        _full_filename = os.path.abspath(filename)
-        try:
-            _csv_reader = csv.reader(open(_full_filename))
-        except:
-            raise ValueError('%s is not a csv_type file' % filename)
-        _xls_name = re.sub('\..*$', '.xls', _full_filename, 1)
-        _xlsapp = XlsManager(_xls_name)
-        for row in _csv_reader:
-            _xlsapp.writerow(row)
-
-        _xlsapp.close()
-
-    def xls(self):
+    def csv2xls(self, delete_csv=True):
         """
         todo
         convert csv file to xls file
         must be used after csv file closed
         """
         self.close()
-        self.csv2xls(self._full_filename)
+        resp = csv2xls(self._full_filename)
+        if resp:
+            os.remove(self._full_filename)
 
     def __del__(self):
         if not self._file.closed:
@@ -329,7 +331,6 @@ class MySQLManager(object):
         except:
             raise
 
-    @function_performance_statistics()
     def execute(self, sql, debug=False, **kwargs):
         """
         execute(self, sql, debug=False, **kwargs)
@@ -461,7 +462,7 @@ class ZipManager(object):
         pass
 
 
-class EmailSender(object):
+class EmailManager(object):
     def __init__(self, **kwargs):
         """
         easy to use mail
@@ -536,7 +537,7 @@ class EmailSender(object):
 
     @property
     def pwd(self):
-        print self._pwd
+        return self._pwd
 
     @pwd.setter
     def pwd(self, value):
@@ -545,7 +546,7 @@ class EmailSender(object):
 
     @property
     def usr(self):
-        return self._usr, self._pwd, self._signature
+        return self._usr
 
     @usr.setter
     def usr(self, value):
@@ -683,7 +684,7 @@ class EmailSender(object):
             self._body_wrapper = {
                 'body': self._body_convert(self._body),
                 'signature': self._signature,
-                'send_time': '',
+                # 'send_time': '',
             }
 
         for key, value in self._body_wrapper.items():
@@ -754,11 +755,23 @@ if __name__ == '__main__':
     #     raise ValueError("python rabbit.py -e <your_email>")
     # xlsapp = XlsManager('test.xls', 'w')
     # xlsapp.writerow(1, 2, 3, 4, 5)
-    # xlsapp.writerow('王立飞')
     # xlsapp.close()
 
-    csvapp = CsvManager('test.csv')
-    csvapp.writerow('122', '2')
-    csvapp.writerow('中文', 1, 2, 3)
-    csvapp.xls()
+    emailapp         = EmailManager()
+    emailapp.usr     = 'basicworld@163.com'
+    emailapp.pwd     = 'WmjhB_102_749'
+    emailapp.to      = 'admin@wlfei.com'
+    emailapp.subject = 'hello you '
+    emailapp.body    = 'im freee'
+    print emailapp.usr
+    print emailapp.pwd
+    print emailapp.to
+    print emailapp.subject
+    print emailapp.body
+    emailapp.send()
+
+    # csvapp = CsvManager('test.csv')
+    # csvapp.writerow('122', '2')
+    # csvapp.writerow('中文', 1, 2, 3)
+    # csvapp.csv2xls()
     pass
