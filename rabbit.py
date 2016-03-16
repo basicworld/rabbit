@@ -758,8 +758,6 @@ if __name__ == '__main__':
     # xlsapp.close()
 
     emailapp         = EmailManager()
-    emailapp.usr     = 'basicworld@163.com'
-    emailapp.pwd     = 'WmjhB_102_749'
     emailapp.to      = 'admin@wlfei.com'
     emailapp.subject = 'hello you '
     emailapp.body    = 'im freee'
