@@ -568,6 +568,7 @@ class EmailManager(object):
 
         if not usr_in_carrot:
             self._usr = value
+            self._signature = value
 
     @property
     def attach(self):
@@ -761,11 +762,6 @@ if __name__ == '__main__':
     emailapp.to      = 'admin@wlfei.com'
     emailapp.subject = 'hello you '
     emailapp.body    = 'im freee'
-    print emailapp.usr
-    print emailapp.pwd
-    print emailapp.to
-    print emailapp.subject
-    print emailapp.body
     emailapp.send()
 
     # csvapp = CsvManager('test.csv')
