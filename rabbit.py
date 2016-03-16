@@ -156,18 +156,80 @@ def lister(*args, **kwargs):
     return _collector
 
 
-def csv2xls(filename):
-    """
-    todo
-    given a csv file, convert to xls and save at the same dir
-    need: abspath, dirname, delete csv or not
-    """
-    _full_filename = os.path.abspath(filename)
-    _xls_name = re.sub('\.*$', '.xls', _full_filename, 1)
-    xlsapp = XlsManager(_xls_name)
-    #todo
+class CsvManager(object):
+    def __init__(self, filename, mode='wb', filedir='./'):
+        """
+        CsvManager(filename, mode='wb', filedir='./')
+        <class>: wrapper csv model, adapt to Chinese
+        @filename<str>: file name
+        @mode<str>: open_mode
+        @filedir<str>: filedir to save file
+        """
+        # makedirs if not exsit
+        filedir = os.path.abspath(filedir)
+        os.makedirs(filedir) if not os.path.isdir(filedir) else True
+        # create csv file
+        filename += '.csv' if not filename.endswith('.csv') else ''
+        self._full_filename = os.path.join(filedir, filename)
+        _write_bom = False if os.path.isfile(self._full_filename) else True
+        self._file = open(self._full_filename, mode)
 
-    pass
+        # adapt to Chinese
+        if _write_bom or mode.startswith('w'):
+            self._file.write('\xEF\xBB\xBF')
+
+        self._writer = csv.writer(self._file)
+
+    def writerow(self, *args):
+        items = lister(args)
+        if items:
+            self._writer.writerow(items)
+
+    def close(self):
+        """
+        use it when you want to close it manually
+        """
+        if not self._file.closed:
+            self._file.close()
+
+    @staticmethod
+    def csv2xls(filename):
+        """
+        todo
+        given a csv file, convert to xls and save at the same dir
+        need: abspath, dirname, delete csv or not
+        """
+        print filename
+        _full_filename = os.path.abspath(filename)
+        try:
+            _csv_reader = csv.reader(open(_full_filename))
+        except:
+            raise ValueError('%s is not a csv_type file' % filename)
+        _xls_name = re.sub('\..*$', '.xls', _full_filename, 1)
+        _xlsapp = XlsManager(_xls_name)
+        for row in _csv_reader:
+            _xlsapp.writerow(row)
+
+        _xlsapp.close()
+
+    def xls(self):
+        """
+        todo
+        convert csv file to xls file
+        must be used after csv file closed
+        """
+        self.close()
+        self.csv2xls(self._full_filename)
+
+    def __del__(self):
+        if not self._file.closed:
+            self._file.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *unused):
+        pass
 
 
 class XlsManager(object):
@@ -236,62 +298,6 @@ class XlsManager(object):
         if self._is_open:
             self._file.save(self._full_filename)
             self._is_open = False
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *unused):
-        pass
-
-
-class CsvManager(object):
-    def __init__(self, filename, mode='wb', filedir='./'):
-        """
-        CsvManager(filename, mode='wb', filedir='./')
-        <class>: wrapper csv model, adapt to Chinese
-        @filename<str>: file name
-        @mode<str>: open_mode
-        @filedir<str>: filedir to save file
-        """
-        # makedirs if not exsit
-        filedir = os.path.abspath(filedir)
-        os.makedirs(filedir) if not os.path.isdir(filedir) else True
-        # create csv file
-        filename += '.csv' if not filename.endswith('.csv') else ''
-        self._full_filename = os.path.join(filedir, filename)
-        _write_bom = False if os.path.isfile(self._full_filename) else True
-        self._file = open(self._full_filename, mode)
-
-        # adapt to Chinese
-        if _write_bom:
-            self._file.write('\xEF\xBB\xBF')
-
-        self._writer = csv.writer(self._file)
-
-    def writerow(self, *args):
-        items = lister(args)
-        if items:
-            self._writer.writerow(items)
-
-    def close(self):
-        """
-        use it when you want to close it manually
-        """
-        if not self._file.closed:
-            self._file.close()
-
-    def xlsx(self):
-        """
-        todo
-        convert csv file to xls file
-        must be used after csv file closed
-        """
-        self.close()
-        return self._full_filename
-
-    def __del__(self):
-        if not self._file.closed:
-            self._file.close()
 
     def __enter__(self):
         return self
@@ -746,8 +752,13 @@ if __name__ == '__main__':
     #     a.send()
     # else:
     #     raise ValueError("python rabbit.py -e <your_email>")
-    xlsapp = XlsManager('test.xls', 'w')
-    xlsapp.writerow(1, 2, 3, 4, 5)
-    print xlsapp._row, xlsapp._col
-    xlsapp.writerow('王立飞')
-    xlsapp.close()
+    # xlsapp = XlsManager('test.xls', 'w')
+    # xlsapp.writerow(1, 2, 3, 4, 5)
+    # xlsapp.writerow('王立飞')
+    # xlsapp.close()
+
+    csvapp = CsvManager('test.csv')
+    csvapp.writerow('122', '2')
+    csvapp.writerow('中文', 1, 2, 3)
+    csvapp.xls()
+    pass
