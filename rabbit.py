@@ -30,7 +30,9 @@ import mimetypes
 import MySQLdb
 import zipfile
 import mailer
+import xlrd
 import xlwt
+
 from carrot import EmailConfig as _EmailConfig
 from carrot import Pop3SmtpImap
 from decimal import Decimal
@@ -154,6 +156,36 @@ def lister(*args, **kwargs):
                     _collector.append(item)
     _iterator(args, target_type)
     return _collector
+
+
+def xls2dict(filename):
+    """
+    get a xls or xlsx, return a list
+    """
+    collector = []
+    _full_filename = os.path.abspath(filename)
+    try:
+        data = xlrd.open_workbook(_full_filename)
+    except:
+        raise ValueError('%s is not a xls_type file' % filename)
+
+    for table in data.sheets():
+        table_collector = []
+        nrows = table.nrows
+        ncols = table.ncols
+        if not (nrows and ncols):
+            continue
+        for row in range(nrows):
+            table_collector.append(table.row_values(row))
+        table_info = {
+            'name': table.name,
+            'data': table_collector,
+            'rows': nrows,
+            'cols': ncols,
+            'title': table.row_values(0)
+        }
+        collector.append(table_info)
+    return collector
 
 
 def csv2xls(filename):
