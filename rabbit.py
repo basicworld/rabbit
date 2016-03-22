@@ -252,7 +252,7 @@ class CsvManager(object):
         """
         self.close()
         resp = csv2xls(self._full_filename)
-        if resp:
+        if delete_csv:
             os.remove(self._full_filename)
 
     def __del__(self):
