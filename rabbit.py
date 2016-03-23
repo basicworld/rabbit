@@ -145,7 +145,10 @@ def lister(*args, **kwargs):
 
 
 def distinct(*args):
-    """"""
+    """
+    distinct(*args)
+    return distinct items
+    """
     items = lister(args)
     func = lambda x, y: x if y in x else x + [y]
     return reduce(func, [[], ] + items)
@@ -153,6 +156,7 @@ def distinct(*args):
 
 def xls2dict(filename):
     """
+    xls2dict(filename)
     get a xls or xlsx, return a list
     """
     collector = []
@@ -183,9 +187,9 @@ def xls2dict(filename):
 
 def csv2xls(filename):
     """
-    todo
+    csv2xls(filename)
     given a csv file, convert to xls and save at the same dir
-    need: abspath, dirname, delete csv or not
+    warning: maxline_of_csvfile <=65535
     """
     _full_filename = os.path.abspath(filename)
     try:
@@ -239,7 +243,6 @@ class CsvManager(object):
 
     def csv2xls(self, delete_csv=True):
         """
-        todo
         convert csv file to xls file
         must be used after csv file closed
         """
@@ -264,6 +267,7 @@ class XlsManager(object):
         """
         XlsManager(filename, mode='w', filedir='./')
         write xls
+        todo: read xls
         """
         self._file = xlwt.Workbook()
         self._is_open = True
@@ -336,7 +340,7 @@ class XlsManager(object):
 class MySQLManager(object):
     def __init__(self, host, user, passwd, db, port=3306, charset='utf8'):
         """
-        MySQLManager(self, host, user, passwd, db, port=3306, charset='utf8')
+        MySQLManager(host, user, passwd, db, port=3306, charset='utf8')
         <class>: Connect to mysql
         @host<str>
         @user<str>
