@@ -1,22 +1,6 @@
 # -*- coding:utf8 -*-
 """
-Intro: tool kit
-Author: basicworld@163.com
-
-function_performance_statistics(): decorator
-time_generator(): create time
-lister(): convert to list
-CsvManager(): wrapper csv model
-MySQLManager(): wrapper MySQLdb
-ZipManager(): wrapper zipfile
-EmailManager(): wrapper mailer
-test_func(): inner test function
-
-use email:
-python rabbit.py -e <your_email>
-
 todo: write img_getter() to save img from url
-todo: write csv2xls() to convert csv to xls
 todo: url2ip() to convert url to ip
 """
 
@@ -43,14 +27,14 @@ sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 
-def function_performance_statistics(trace_this=True):
+def func_monitor(trace_this=True):
     """
-    function_performance_statistics(trace_this=True)
+    func_monitor(trace_this=True)
     A decorator to show running time of a func
     @trace_this: print running_time or not
 
     eg:
-    @function_performance_statistics(trace_this=True)
+    @func_monitor(trace_this=True)
     def func...
     """
     from functools import wraps
@@ -72,24 +56,24 @@ def function_performance_statistics(trace_this=True):
     return _time_decorator
 
 
-def time_generator(basetime='', timedelta=0, target_type='day'):
+def time_builder(basetime='', timedelta=0, target_type='day'):
     """
-    time_generator(basetime='', timedelta=0, target_type='day')
+    time_builder(basetime='', timedelta=0, target_type='day')
     Generate time with target_type
     @basetime: input a time or None by default
     @timedelta: basetime + timedelta = target_time
     @target_type: day, month, year, month_start
 
     # doctest
-    >>> time_generator(basetime='20160310')
+    >>> time_builder(basetime='20160310')
     '2016-03-10'
-    >>> time_generator(basetime='20160310', target_type='month_start')
+    >>> time_builder(basetime='20160310', target_type='month_start')
     '2016-03-01'
-    >>> time_generator(basetime='20160310', target_type='year')
+    >>> time_builder(basetime='20160310', target_type='year')
     '2016'
-    >>> time_generator(basetime='20160310', timedelta=-1, target_type='day')
+    >>> time_builder(basetime='20160310', timedelta=-1, target_type='day')
     '2016-03-09'
-    >>> time_generator(basetime='20160310', timedelta=30, target_type='month')
+    >>> time_builder(basetime='20160310', timedelta=30, target_type='month')
     '2016-04'
     """
     if basetime:
@@ -545,10 +529,10 @@ class EmailManager(object):
         self._serverconfig = Pop3SmtpImap().server
 
         # message
-        _date              = time_generator(target_type='full_time')
+        _date              = time_builder(target_type='full_time')
         self._message      = mailer.Message(Date=_date, charset="utf-8")
 
-    @function_performance_statistics(True)
+    @func_monitor(True)
     def send(self):
         """send email"""
         if not self._check():
@@ -763,7 +747,7 @@ class EmailManager(object):
             return None
 
 
-@function_performance_statistics(True)
+@func_monitor(True)
 def test_func(x, y):
     return x + y
 
