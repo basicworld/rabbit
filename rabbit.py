@@ -144,6 +144,13 @@ def lister(*args, **kwargs):
     return _collector
 
 
+def distinct(*args):
+    """"""
+    items = lister(args)
+    func = lambda x, y: x if y in x else x + [y]
+    return reduce(func, [[], ] + items)
+
+
 def xls2dict(filename):
     """
     get a xls or xlsx, return a list

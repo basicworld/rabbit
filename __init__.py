@@ -14,3 +14,4 @@ from rabbit import MySQLManager  # mysql
 from rabbit import time_builder  # time
 from rabbit import XlsManager
 from rabbit import ZipManager  # zip a filedir to zip
+from rabbit import distinct
