@@ -16,6 +16,7 @@ import zipfile
 import mailer
 import xlrd
 import xlwt
+import requests
 
 from carrot import EmailConfig as _EmailConfig
 from carrot import Pop3SmtpImap
@@ -203,6 +204,13 @@ def csv2xls(filename):
 
     _xlsapp.close()
     return True
+
+
+def imager(url, **kwargs):
+    """
+    default url
+    """
+    pass
 
 
 class CsvManager(object):
