@@ -517,6 +517,7 @@ class EmailManager(object):
         self._subject   = params.get('subject', None)
         self._body      = params.get('body', None)
         self._attach    = params.get('attach', [])
+        self._retype_body = params.get('retype_body', False)
 
         # mailer setting
         self._host      = params.get('host', None)
@@ -531,7 +532,6 @@ class EmailManager(object):
         _date           = time_builder(target_type='full_time')
         self._message   = mailer.Message(Date=_date, charset="utf-8")
 
-    @func_monitor(True)
     def send(self):
         """send email"""
         if not self._check():
@@ -547,7 +547,7 @@ class EmailManager(object):
             _sender.send(self._message)
         except:
             print "[Error] Something wrong when sending email"
-            return False
+            raise
         return True
 
     @property
@@ -604,11 +604,11 @@ class EmailManager(object):
         add attach to Mesage directly
         @args: filenames
         """
-        for filename in args:
-            if os.path.isfile(value):
-                ext = os.path.splitext(self._attach)[-1]
+        for filename in lister(args):
+            if os.path.isfile(filename):
+                ext   = os.path.splitext(filename)[-1]
                 mtype = mimetypes.types_map.get(ext)
-                self._message.attach(filename=self._attach,
+                self._message.attach(filename=filename,
                                      cid=None,
                                      mimetype=(mtype if mtype else None),
                                      content=None,
@@ -651,8 +651,11 @@ class EmailManager(object):
         if isinstance(value, (str, unicode)):
             if os.path.isfile(value):
                 value = open(value).read()
-            self._body = '\n'.join(['<p>' + i.strip() + '</p>'
-                                   for i in value.split('\n')])
+            if self._retype_body:
+                self._body = '\n'.join(['<p>' + i.strip() + '</p>'
+                                       for i in value.split('\n')])
+            else:
+                self._body = unicode(value)
         else:
             raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
@@ -671,7 +674,8 @@ class EmailManager(object):
             print 'At least %s parameters should be set:' % error
             print error_msg
             return False
-        return True
+        else:
+            return True
 
     def _build_message(self):
         """build mesage"""
@@ -727,7 +731,8 @@ if __name__ == '__main__':
     emailapp.usr     = 'test@itprofessor.cn'
     emailapp.to      = ['admin@wlfei.com', 'basicworld@163.com']
     emailapp.subject = 'hello you'
-    emailapp.body    = """a\nb\nc\n"""
+    emailapp.body    = """abc"""
+    emailapp.attach = ('rabbit.py', 'carrot.py')
     emailapp.send()
 
     # csvapp = CsvManager('test.csv')

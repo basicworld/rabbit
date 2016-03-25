@@ -20,13 +20,18 @@ EMAIL_ACCOUNT = {
     },
 }
 
+# hello world subject
 EMAIL_SUBJECT = "Hello world from rabbit"
+
+# hello world body
 EMAIL_BODY = """Hello my friend,
 This is an illustrate email from <strong>rabbit</strong>--
 an easy to use tool kit for python coding. Click
 <a href="https://github.com/basicworld/rabbit">here</a> for more information.
 Thanks for your interest. Have a good day!
 """
+
+# body model, all the body will be send using html
 EMAIL_HTML_MODEL = r"""<!DOCTYPE html>
 <head><style type="text/css">
 a:link {color: #065FB9}
