@@ -1,6 +1,6 @@
 ## rabbit
 
-an easy to use tool kit for python, function include: email, time, csv, xls, zip... 
+an easy to use tool kit for python, function include: email, time, csv, xls, zip...
 
 
 ### func_monitor
@@ -18,13 +18,13 @@ function: a function to build time
 
 	time_builder()
 	>>> '2016-02-15'
-	
+
 	time_builder('20160215')
 	>>> '2016-02-15'
-	
+
 	time_builder('2016-02-15', 1)
 	>>> '2016-02-16'
-	
+
 	time_builder('2016-02-15', -1)
 	>>> '2016-02-14'
 
@@ -34,10 +34,10 @@ function: convert *args to one list
 
 	lister(1,2,(3,4))
 	>>>[1,2,3,4]
-	
+
 	lister(1,2,(3,4.1), target_type=int)
 	>>>[1,2,3,4]
-	
+
 	lister(1,2,(3,4),[[5,6],7])
 	>>>[1,2,3,4,5,6,7]
 
@@ -45,7 +45,7 @@ function: convert *args to one list
 ### distinct
 
 function; delete all duplicate items in *args and return list
-	
+
 	distinct(1,2,2,3,(4,4,5,6))
 	>>>[1,2,3,4,5,6]
 
@@ -91,11 +91,11 @@ class: create xls file
 
 class: create zip file from files or from dir
 
-### EmailManager
+### EmailGetter
 
 class: send email
 
-	eapp = EmailManager()
+	eapp = EmailGetter()
 	eapp.to = 'test@example.com'
 	eapp.sugject = 'hello'
 	eapp.body = 'world'

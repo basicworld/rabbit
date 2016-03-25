@@ -16,4 +16,4 @@ from rabbit import CsvManager
 from rabbit import MySQLManager
 from rabbit import XlsManager
 from rabbit import ZipManager
-from rabbit import EmailManager
+from rabbit import EmailGetter

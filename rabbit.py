@@ -574,7 +574,7 @@ class ZipManager(object):
         pass
 
 
-class EmailManager(object):
+class EmailSender(object):
     def __init__(self, **kwargs):
         """
         easy to use mail
@@ -802,6 +802,24 @@ class EmailManager(object):
             raise
 
 
+class EmailGetter(object):
+    def __init__(self, **kwargs):
+        """receive email"""
+        pass
+
+    def usr(self):
+        pass
+
+    def pwd(self):
+        pass
+
+    def get(self):
+        """
+        return email list
+        """
+        pass
+
+
 @func_monitor(True)
 def test_func(x, y):
     return x + y
@@ -829,7 +847,7 @@ if __name__ == '__main__':
     # xlsapp.writerow(1, 2, 3, 4, 5)
     # xlsapp.close()
 
-    emailapp         = EmailManager()
+    emailapp         = EmailSender()
     emailapp.usr     = 'test@itprofessor.cn'
     emailapp.to      = ['admin@wlfei.com', 'basicworld@163.com']
     emailapp.subject = 'hello you'
