@@ -22,10 +22,9 @@ EMAIL_ACCOUNT = {
 
 EMAIL_SUBJECT = "Hello world from rabbit"
 EMAIL_BODY = """Hello my friend,
-This is an illustrate email from <strong>rabbit</strong>--\
-an easy to use tool kit for python coding. Click \
-<a href="https://github.com/basicworld/rabbit">here</a>\
- for more information.
+This is an illustrate email from <strong>rabbit</strong>--
+an easy to use tool kit for python coding. Click
+<a href="https://github.com/basicworld/rabbit">here</a> for more information.
 Thanks for your interest. Have a good day!
 """
 EMAIL_HTML_MODEL = r"""<!DOCTYPE html>

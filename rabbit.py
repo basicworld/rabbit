@@ -17,7 +17,6 @@ import mailer
 import xlrd
 import xlwt
 import requests
-
 import carrot
 from decimal import Decimal
 
@@ -626,11 +625,11 @@ class EmailManager(object):
         """
         @args: email address
         """
-        for email in args:
+        for email in lister(args):
             if isinstance(email, (str, unicode)) and '@' in email:
                 self._to.append(email)
             else:
-                print("Invalid email address: %s" % email)
+                raise KeyError("Invalid email address: %s" % email)
 
     @property
     def subject(self):
@@ -652,21 +651,10 @@ class EmailManager(object):
         if isinstance(value, (str, unicode)):
             if os.path.isfile(value):
                 value = open(value).read()
-            self._body = '\n'.join(['<p>' + i + '</p>'
+            self._body = '\n'.join(['<p>' + i.strip() + '</p>'
                                    for i in value.split('\n')])
         else:
             raise TypeError("Str or unicode anticipated, got %s" % type(value))
-
-    @staticmethod
-    def _body_convert(body):
-        _collector = ""
-        if os.path.isfile(body):
-            for line in open(body):
-                _collector += '<p>%s</p>' % line
-        else:
-            for line in body.split('\n'):
-                _collector += '<p>%s</p>' % line
-        return _collector
 
     def _check(self):
         error = 0
@@ -690,14 +678,12 @@ class EmailManager(object):
         self._message.From    = self._usr
         self._message.To      = self._to
         self._message.Subject = self._subject
-
-        self._body_wrapper = {
-            'body': self._body_convert(self._body),
+        _body_wrapper = {
+            'body': self._body,
             'signature': self._signature,
         }
-
         _html_model = carrot.EMAIL_HTML_MODEL
-        for key, value in self._body_wrapper.items():
+        for key, value in _body_wrapper.items():
             _html_model = _html_model.replace('<!--%s-->' % key, value)
         self._message.Html = _html_model
         if self._attach:
@@ -708,37 +694,6 @@ class EmailManager(object):
                                  mimetype=mtype,
                                  content=None,
                                  charset=None)
-
-    @staticmethod
-    def _setter(value, check_type=False):
-        """
-        inner func for *.setter
-        """
-        try:
-            if check_type:
-                if check_type in ('@', 'email'):
-                    if not (isinstance(value, (str, unicode)) and
-                            '@' in value):
-                        raise ValueError
-                    return value
-                elif check_type in (('@', list), ('email', list)):
-                    for val in value:
-                        if not (isinstance(val, (str, unicode)) and
-                                '@' in val):
-                            raise ValueError
-                    return value
-                elif check_type in ('file', ):
-                    if not os.path.isfile(value):
-                        raise ValueError
-                    return open(value).read()
-                else:
-                    if not isinstance(value, check_type):
-                        raise ValueError
-                    return value
-            else:
-                return value
-        except ValueError as e:
-            return None
 
 
 @func_monitor(True)
@@ -770,9 +725,9 @@ if __name__ == '__main__':
 
     emailapp         = EmailManager()
     emailapp.usr     = 'test@itprofessor.cn'
-    emailapp.to      = 'admin@wlfei.com'
-    emailapp.subject = 'hello you '
-    emailapp.body    = 'im freee'
+    emailapp.to      = ['admin@wlfei.com', 'basicworld@163.com']
+    emailapp.subject = 'hello you'
+    emailapp.body    = """a\nb\nc\n"""
     emailapp.send()
 
     # csvapp = CsvManager('test.csv')
