@@ -19,11 +19,88 @@ import xlwt
 import requests
 import carrot
 from decimal import Decimal
-
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
+
+
+def filer(filename='', filedir='./'):
+    """
+    filer(filename='', filedir='./')
+    return fullpath
+    auto create filedir
+    if filename is null, only filedir be created
+    """
+    filedir = os.path.abspath(filedir)
+    if not os.path.isdir(filedir):
+        os.makedirs(filedir)
+    if filename:
+        return os.path.join(filedir, filename)
+    else:
+        return filedir
+
+
+def logger(name, logname, logdir='./'):
+    """
+    logger(name, logname, logdir='./')
+    high level logging
+
+    how to use:
+    alog = logger('default', 'log13.txt')
+    alog.debug('debug message!')
+    alog.info('info message!')
+    alog.error('error message')
+    alog.critical('critical message')
+    alog.warning('warning message')
+    """
+    import logging
+    import logging.config
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'default': {'format': '%(asctime)s %(levelname)s %(message)s',
+                        'datefmt': '%Y-%m-%d %H:%M:%S',
+                        },
+            'verbose': {'format': '%(asctime)s %(levelname)s %(module)s \
+                %(process)d %(thread)d %(message)s',
+                        'datefmt': '%Y-%m-%d %H:%M:%S',
+                        },
+            'simple': {'format': '%(levelname)s %(message)s',
+                       'datefmt': '%Y-%m-%d %H:%M:%S'
+                       },
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+                'stream': 'ext://sys.stdout',
+            },
+            'file': {
+                'level': 'INFO',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'default',
+                'filename': filer(logname, logdir),
+                'maxBytes': 1024000,
+                'backupCount': 3,
+                'encoding': 'utf8',
+            },
+        },
+        'loggers': {
+            'default': {
+                'level': 'DEBUG',
+                'handlers': ['console', 'file'],
+            },
+            'file': {
+                'level': 'INFO',
+                'handlers': ['file'],
+            }
+        },
+        # 'disable_existing_loggers': False,
+    })
+    return logging.getLogger(name)
 
 
 def func_monitor(trace_this=True):
@@ -504,10 +581,14 @@ class EmailManager(object):
         @To<str_list>: list of users you want to send email
         @Subject<str>
         @Body<str or fileObject>
-        @attach<None or str or filename>
-        @body_wrapper<dict>: use to pack html_model
+        @attach<filename or filename_list>
         @debug<str>: show warning msg or not
+        @retype_body: if True, your body will be retype: line --> <p>line</p>
         """
+        log_time = str(time.time())[:6]
+        self.logger = logger('file', 'log_email_%s.log' % log_time, './tmp')
+        self.logger.info('%s%s' % ('-' * 20, 'email start'))
+        self.logger.info('%s%s' % ('-' * 20, time.ctime()))
         params = {}
         for key, value in kwargs.items():
             params[key.lower()] = value
@@ -546,8 +627,11 @@ class EmailManager(object):
         try:
             _sender.send(self._message)
         except:
-            print "[Error] Something wrong when sending email"
+            self.logger.error("[Error] Something wrong when sending email")
+            print ("[Error] Something wrong when sending email")
             raise
+        self.logger.info('%s%s' % ('-' * 20, time.ctime()))
+        self.logger.info('%s%s' % ('-' * 20, 'email end with success'))
         return True
 
     @property
@@ -559,6 +643,8 @@ class EmailManager(object):
         if isinstance(value, (str, unicode)):
             self._pwd = str(value)
         else:
+            self.logger.error("Str or unicode anticipated, \
+                got %s" % type(value))
             raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     @property
@@ -580,18 +666,24 @@ class EmailManager(object):
                 self._host = _resp['smtp']['host']
                 self._port = _resp['smtp']['port'][0]
             else:
+                self.logger.error("server error: %s" % _resp)
                 raise KeyError("Email server not in carrot.py")
         else:
+            self.logger.error("email error: %s" % value)
             raise KeyError("Invalid email address")
 
         _resp = carrot.EMAIL_ACCOUNT.get(value, None)
         if _resp:
             self._usr       = _resp['usr']
+            self.logger.info('get usr: %s' % self._usr)
             self._pwd       = _resp['pwd']
+            self.logger.info('get pwd from file')
             self._signature = _resp['signature']
         else:
             self._usr       = value
+            self.logger.info('get usr: %s' % self._usr)
             self._pwd       = raw_input("Insert your email pwd:")
+            self.logger.info('get pwd from input')
             self._signature = value
 
     @property
@@ -608,12 +700,14 @@ class EmailManager(object):
             if os.path.isfile(filename):
                 ext   = os.path.splitext(filename)[-1]
                 mtype = mimetypes.types_map.get(ext)
+                self.logger.info('get attach: %s' % filename)
                 self._message.attach(filename=filename,
                                      cid=None,
                                      mimetype=(mtype if mtype else None),
                                      content=None,
                                      charset=None)
             else:
+                self.logger.warning("%s is not a file" % value)
                 print ("%s is not a file" % value)
 
     @property
@@ -628,7 +722,9 @@ class EmailManager(object):
         for email in lister(args):
             if isinstance(email, (str, unicode)) and '@' in email:
                 self._to.append(email)
+                self.logger.info('get receiver: %s' % email)
             else:
+                self.logger.error("Invalid email address: %s" % email)
                 raise KeyError("Invalid email address: %s" % email)
 
     @property
@@ -639,7 +735,10 @@ class EmailManager(object):
     def subject(self, value):
         if isinstance(value, (str, unicode)):
             self._subject = value
+            self.logger.info('get subject: %s' % value)
         else:
+            self.logger.error("Str or unicode anticipated, \
+                got %s" % type(value))
             raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     @property
@@ -656,7 +755,10 @@ class EmailManager(object):
                                        for i in value.split('\n')])
             else:
                 self._body = unicode(value)
+            self.logger.info('get body: %s...' % value[:10])
         else:
+            self.logger.error("Str or unicode anticipated, \
+                got %s" % type(value))
             raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     def _check(self):
@@ -671,33 +773,33 @@ class EmailManager(object):
             error += 1
 
         if error:
-            print 'At least %s parameters should be set:' % error
+            self.logger.error('At least %s parameters should be set: \
+                %s' % (error, error_msg))
+            print ('At least %s parameters should be set:' % error)
             print error_msg
             return False
         else:
+            self.logger.info('check pwd and receiver down')
             return True
 
     def _build_message(self):
         """build mesage"""
-        self._message.From    = self._usr
-        self._message.To      = self._to
-        self._message.Subject = self._subject
-        _body_wrapper = {
-            'body': self._body,
-            'signature': self._signature,
-        }
-        _html_model = carrot.EMAIL_HTML_MODEL
-        for key, value in _body_wrapper.items():
-            _html_model = _html_model.replace('<!--%s-->' % key, value)
-        self._message.Html = _html_model
-        if self._attach:
-            ext = os.path.splitext(self._attach)[-1]
-            mtype = mimetypes.types_map[ext]
-            self._message.attach(filename=self._attach,
-                                 cid=None,
-                                 mimetype=mtype,
-                                 content=None,
-                                 charset=None)
+        try:
+            self._message.From    = self._usr
+            self._message.To      = self._to
+            self._message.Subject = self._subject
+            _body_wrapper = {
+                'body': self._body,
+                'signature': self._signature,
+            }
+            _html_model = carrot.EMAIL_HTML_MODEL
+            for key, value in _body_wrapper.items():
+                _html_model = _html_model.replace('<!--%s-->' % key, value)
+            self._message.Html = _html_model
+            self.logger.info('build message down')
+        except:
+            self.logger.error('fail to build message')
+            raise
 
 
 @func_monitor(True)

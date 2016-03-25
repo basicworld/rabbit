@@ -7,6 +7,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+
 EMAIL_ACCOUNT = {
     'test@itprofessor.cn': {
         'usr': 'test@itprofessor.cn',  # change to your own account
