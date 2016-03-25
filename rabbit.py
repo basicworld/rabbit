@@ -18,8 +18,7 @@ import xlrd
 import xlwt
 import requests
 
-from carrot import EmailConfig as _EmailConfig
-from carrot import Pop3SmtpImap
+import carrot
 from decimal import Decimal
 
 import sys
@@ -507,51 +506,31 @@ class EmailManager(object):
         @Subject<str>
         @Body<str or fileObject>
         @attach<None or str or filename>
-        @html_model<fileObject>: a html file, default use model in parrot
         @body_wrapper<dict>: use to pack html_model
-        @show_warning<str>: show warning msg or not
+        @debug<str>: show warning msg or not
         """
         params = {}
         for key, value in kwargs.items():
             params[key.lower()] = value
 
         # message setting
-        self._to           = params.get('to', None)
-        self._subject      = params.get('subject', None)
-        self._body         = params.get('body', None)
-        self._attach       = params.get('attach', None)
-        # self._date
-        # self._html
-        # self._from
-        # self._rto
-        # self._cc
-        # self._bcc
-        # self._charset
-        # self._headers
-        self._html_model   = params.get('html_model', None)
-        self._body_wrapper = params.get('body_wrapper', None)
+        self._to        = params.get('to', [])
+        self._subject   = params.get('subject', None)
+        self._body      = params.get('body', None)
+        self._attach    = params.get('attach', [])
 
         # mailer setting
-        self._host         = params.get('host', None)
-        self._port         = params.get('port', None)
-        self._use_ssl      = params.get('use_ssl', None)
-        self._usr          = params.get('usr', None)
-        self._pwd          = params.get('pwd', None)
-        # self._use_tls
-        # self._use_plain_auth
-        # self._timeout
+        self._host      = params.get('host', None)
+        self._usr       = params.get('usr', None)
+        self._pwd       = params.get('pwd', None)
 
         # signature
-        self._signature    = params.get('signature', None)
-        self._show_warning = params.get('show_warning', False)
-
-        # load config data from carrot
-        self._emailconfig  = _EmailConfig()
-        self._serverconfig = Pop3SmtpImap().server
+        self._signature = params.get('signature', None)
+        self._debug     = params.get('debug', False)
 
         # message
-        _date              = time_builder(target_type='full_time')
-        self._message      = mailer.Message(Date=_date, charset="utf-8")
+        _date           = time_builder(target_type='full_time')
+        self._message   = mailer.Message(Date=_date, charset="utf-8")
 
     @func_monitor(True)
     def send(self):
@@ -563,7 +542,7 @@ class EmailManager(object):
         _sender = mailer.Mailer(host=self._host,
                                 usr=self._usr,
                                 port=self._port,
-                                use_ssl=self._use_ssl,
+                                use_ssl=True,
                                 pwd=self._pwd)
         try:
             _sender.send(self._message)
@@ -578,8 +557,10 @@ class EmailManager(object):
 
     @pwd.setter
     def pwd(self, value):
-        """todo"""
-        self._pwd = str(value)
+        if isinstance(value, (str, unicode)):
+            self._pwd = str(value)
+        else:
+            raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     @property
     def usr(self):
@@ -587,24 +568,31 @@ class EmailManager(object):
 
     @usr.setter
     def usr(self, value):
-        try:
-            _server       = re.findall('@(.*)\.', value)[0]
-            self._host    = self._serverconfig[_server]['smtp']['host']
-            self._port    = self._serverconfig[_server]['smtp']['port'][0]
-            self._use_ssl = self._serverconfig[_server]['smtp']['ssl']
-        except:
-            print "[Warning] Invalid usr, or mail server not config in carrot"
-            return False
-        usr_in_carrot = False
-        for acc in self._emailconfig.account:
-            if value in acc['usr']:
-                usr_in_carrot   = True
-                self._usr       = acc['usr']
-                self._pwd       = acc['pwd']
-                self._signature = acc['signature']
+        """
+        @value: usrname
+        """
+        # parse email server
+        _resp = re.search("@(.*)", value.strip())
+        if _resp:
+            _server    = _resp.group(1)
+            # get server host and port
+            _resp = carrot.EMAIL_SERVER.get(_server)
+            if _resp:
+                self._host = _resp['smtp']['host']
+                self._port = _resp['smtp']['port'][0]
+            else:
+                raise KeyError("Email server not in carrot.py")
+        else:
+            raise KeyError("Invalid email address")
 
-        if not usr_in_carrot:
-            self._usr = value
+        _resp = carrot.EMAIL_ACCOUNT.get(value, None)
+        if _resp:
+            self._usr       = _resp['usr']
+            self._pwd       = _resp['pwd']
+            self._signature = _resp['signature']
+        else:
+            self._usr       = value
+            self._pwd       = raw_input("Insert your email pwd:")
             self._signature = value
 
     @property
@@ -612,24 +600,37 @@ class EmailManager(object):
         return self._attach
 
     @attach.setter
-    def attach(self, value):
+    def attach(self, *args):
         """
-        todo: add attach to Mesage diractly
+        add attach to Mesage directly
+        @args: filenames
         """
-        if not os.path.isfile(value) and self._show_warning:
-            print('[Error] Attach %s not exsit' % value)
-        else:
-            self._message.attach(value)
+        for filename in args:
+            if os.path.isfile(value):
+                ext = os.path.splitext(self._attach)[-1]
+                mtype = mimetypes.types_map.get(ext)
+                self._message.attach(filename=self._attach,
+                                     cid=None,
+                                     mimetype=(mtype if mtype else None),
+                                     content=None,
+                                     charset=None)
+            else:
+                print ("%s is not a file" % value)
 
     @property
     def to(self):
         return self._to
 
     @to.setter
-    def to(self, value):
-        if isinstance(value, (str, unicode)):
-            value = [value]
-        self._to = self._setter(value, check_type=('@', list))
+    def to(self, *args):
+        """
+        @args: email address
+        """
+        for email in args:
+            if isinstance(email, (str, unicode)) and '@' in email:
+                self._to.append(email)
+            else:
+                print("Invalid email address: %s" % email)
 
     @property
     def subject(self):
@@ -637,7 +638,10 @@ class EmailManager(object):
 
     @subject.setter
     def subject(self, value):
-        self._subject = self._setter(value, check_type=(str, unicode))
+        if isinstance(value, (str, unicode)):
+            self._subject = value
+        else:
+            raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     @property
     def body(self):
@@ -645,23 +649,13 @@ class EmailManager(object):
 
     @body.setter
     def body(self, value):
-        self._body = self._setter(value, check_type=(str, unicode))
-
-    @property
-    def body_wrapper(self):
-        return self._body_wrapper
-
-    @body_wrapper.setter
-    def body_wrapper(self, value):
-        self._body_wrapper = self._setter(value, check_type=dict)
-
-    @property
-    def html_model(self):
-        return self._html_model
-
-    @html_model.setter
-    def html_model(self, value):
-        self._html_model = self._setter(value, check_type='file')
+        if isinstance(value, (str, unicode)):
+            if os.path.isfile(value):
+                value = open(value).read()
+            self._body = '\n'.join(['<p>' + i + '</p>'
+                                   for i in value.split('\n')])
+        else:
+            raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     @staticmethod
     def _body_convert(body):
@@ -670,45 +664,24 @@ class EmailManager(object):
             for line in open(body):
                 _collector += '<p>%s</p>' % line
         else:
-            for line in body.replace('    ', '').split('\n'):
+            for line in body.split('\n'):
                 _collector += '<p>%s</p>' % line
         return _collector
 
     def _check(self):
-        need_set_para = 0
-        # use default if not exit
-        warning_msg = ""
-        if not (self._usr):
-            warning_msg += """[Warning] usr is empty, \
-                use default usr%s""" % os.linesep
-            self.usr = "test@itprofessor.cn"
-        if not (self._html_model):
-            warning_msg += """[Warning] HTML_model is empty, \
-                use default model%s""" % os.linesep
-            self._html_model = self._emailconfig.html_model
-        if not (self._body):
-            warning_msg += """[Warning] body is empty, \
-                use default%s""" % os.linesep
-            self._body = self._emailconfig.body
-        if not (self._subject):
-            warning_msg += """[Warning] subject is empty, \
-                use default%s""" % os.linesep
-            self._subject = "Hello world from rabbit"
-
+        error = 0
         # usr pwd to must be set
         error_msg = ""
         if not (self._pwd):
-            error_msg     += '[Error] pwd is empty%s' % os.linesep
-            need_set_para += 1
+            error_msg += '[Error] pwd is empty%s' % os.linesep
+            error += 1
         if not (self._to):
-            error_msg     += '[Error] To(reciever) is empty%s' % os.linesep
-            need_set_para += 1
+            error_msg += '[Error] To(reciever) is empty%s' % os.linesep
+            error += 1
 
-        if need_set_para:
-            print 'At least %s parameters should be set:' % need_set_para
+        if error:
+            print 'At least %s parameters should be set:' % error
             print error_msg
-            if self._show_warning:
-                print warning_msg
             return False
         return True
 
@@ -718,17 +691,15 @@ class EmailManager(object):
         self._message.To      = self._to
         self._message.Subject = self._subject
 
-        if not self._body_wrapper:
-            self._body_wrapper = {
-                'body': self._body_convert(self._body),
-                'signature': self._signature,
-                # 'send_time': '',
-            }
+        self._body_wrapper = {
+            'body': self._body_convert(self._body),
+            'signature': self._signature,
+        }
 
+        _html_model = carrot.EMAIL_HTML_MODEL
         for key, value in self._body_wrapper.items():
-            self._html_model = self._html_model.replace('<!--%s-->' %
-                                                        key, value)
-        self._message.Html = self._html_model
+            _html_model = _html_model.replace('<!--%s-->' % key, value)
+        self._message.Html = _html_model
         if self._attach:
             ext = os.path.splitext(self._attach)[-1]
             mtype = mimetypes.types_map[ext]
@@ -740,7 +711,9 @@ class EmailManager(object):
 
     @staticmethod
     def _setter(value, check_type=False):
-        """for *.setter"""
+        """
+        inner func for *.setter
+        """
         try:
             if check_type:
                 if check_type in ('@', 'email'):
@@ -796,6 +769,7 @@ if __name__ == '__main__':
     # xlsapp.close()
 
     emailapp         = EmailManager()
+    emailapp.usr     = 'test@itprofessor.cn'
     emailapp.to      = 'admin@wlfei.com'
     emailapp.subject = 'hello you '
     emailapp.body    = 'im freee'
