@@ -19,6 +19,7 @@ import xlwt
 import requests
 import carrot
 from decimal import Decimal
+import imaplib
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -172,8 +173,9 @@ def time_builder(basetime='', timedelta=0, target_type='day'):
         'hour': '%Y-%m-%d %H:00:00',
         'minute': '%Y-%m-%d %H:%M:00',
         'second': '%Y-%m-%d %H:%M:%S',
-        'dbYHMS': '%d/%b/%Y:%H:%M:%S',
-        'dbY': '%d/%b/%Y',
+        'dbYHMS/': '%d/%b/%Y:%H:%M:%S',
+        'dbY/': '%d/%b/%Y',  # '27/Mar/2016'
+        'dbY-': '%d-%b-%Y',  # '27-Mar-2016'
         'full_time': "%a, %d %b %Y %H:%M:%S %z",
     }
     _target_time = basetime + _oneday * timedelta
@@ -659,7 +661,7 @@ class EmailSender(object):
         # parse email server
         _resp = re.search("@(.*)", value.strip())
         if _resp:
-            _server    = _resp.group(1)
+            _server = _resp.group(1)
             # get server host and port
             _resp = carrot.EMAIL_SERVER.get(_server)
             if _resp:
@@ -802,22 +804,126 @@ class EmailSender(object):
             raise
 
 
+def email_parser(raw_email):
+    """parse email and return dict
+    @raw_email str
+    """
+    import email
+    msg = email.message_from_string(raw_email)
+    # print msg.keys()
+    return {
+        'subject': msg.get("subject"),
+        'from': msg.get('from'),
+        'to': msg.get('to'),
+        'date': msg.get('Date')
+    }
+
+
 class EmailGetter(object):
+
     def __init__(self, **kwargs):
         """receive email"""
-        pass
+        log_time = str(time.time())[:6]
+        self.logger = logger('file', 'log_email_%s.log' % log_time, './tmp')
+        self.logger.info('%s%s' % ('-' * 20, 'email start'))
+        self.logger.info('%s%s' % ('-' * 20, time.ctime()))
+        params = {}
+        for key, value in kwargs.items():
+            params[key.lower()] = value
+        self._usr = params.get('usr', None)
+        self._pwd = params.get('pwd', None)
 
+    @property
     def usr(self):
-        pass
+        return self._usr
 
+    @usr.setter
+    def usr(self, value):
+        """
+        @value: usrname
+        """
+        # parse email server
+        _resp = re.search("@(.*)", value.strip())
+        if _resp:
+            _server = _resp.group(1)
+            # get server host and port
+            _resp = carrot.EMAIL_SERVER.get(_server)
+            if _resp:
+                self._host = _resp['imap']['host']
+                self._port = _resp['imap']['port'][0]
+            else:
+                self.logger.error("server error: %s" % _resp)
+                raise KeyError("Email server not in carrot.py")
+        else:
+            self.logger.error("email error: %s" % value)
+            raise KeyError("Invalid email address")
+
+        _resp = carrot.EMAIL_ACCOUNT.get(value, None)
+        if _resp:
+            self._usr = _resp['usr']
+            self.logger.info('get usr: %s' % self._usr)
+            self._pwd = _resp['pwd']
+            self.logger.info('get pwd from file')
+        else:
+            self._usr = value
+            self.logger.info('get usr: %s' % self._usr)
+            self._pwd = raw_input("Insert your email pwd:")
+            self.logger.info('get pwd from input')
+
+    @property
     def pwd(self):
-        pass
+        return self._pwd
+
+    @pwd.setter
+    def pwd(self, value):
+        if isinstance(value, (str, unicode)):
+            self._pwd = str(value)
+        else:
+            self.logger.error("Str or unicode anticipated, \
+                got %s" % type(value))
+            raise TypeError("Str or unicode anticipated, got %s" % type(value))
 
     def get(self):
         """
         return email list
         """
+        self.logger.info("connect to host %s: %s" % (self._host, self._port))
+        self.M = imaplib.IMAP4_SSL(self._host, self._port)
+        self.logger.info("login with usr %s" % self._usr)
+        try:
+            self.M.login(self._usr, self._pwd)
+        except:
+            raise
+        self.logger.info("use INBOX")
+        self.M.select("INBOX")
+        self.logger.info("search new email %s" % self._usr)
+        # typ, data = self.M.uid("SEARCH", "UNSEEN")
+        typ, data = self.M.search(None, "UNSEEN")
+        # time_builder(timedelta=-10, target_type='dbY-'))
+        if typ == "OK":
+            for uid in data[0].split():
+                result, raw_email = self.M.fetch(uid, "(RFC822)")
+                    # uid("FETCH", uid, "ALL")
+                          # "(FLAGS BODY.PEEK[HEADER] BODYSTRUCTURE)")
+                if result:
+                    # self.M.store(uid, '+FLAGS', '\\Seen')  # mark as read
+                    print email_parser(raw_email[0][1])
+                    # for i in raw_email:
+                    #     print i
+        # print self._usr, self._pwd, self._host, self._port
+
+    def close(self):
+        try:
+            self.M.logout()
+        except:
+            raise
+
+    def mark(self, select_day, status):
+        """todo use to mark emails"""
         pass
+        # typ, data = M.search(None, '(BEFORE 01-Jan-2009)')
+        # for num in data[0].split():
+        #    M.store(num, '+FLAGS', '\\Seen')
 
 
 @func_monitor(True)
@@ -826,6 +932,10 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
+    emailget = EmailGetter()
+    emailget.usr = 'test@itprofessor.cn'
+    emailget.get()
+    emailget.close()
     # from optparse import OptionParser
     # usage = """%prog [-e <email>]"""
     # version = "%prog 1.0"
@@ -847,13 +957,13 @@ if __name__ == '__main__':
     # xlsapp.writerow(1, 2, 3, 4, 5)
     # xlsapp.close()
 
-    emailapp         = EmailSender()
-    emailapp.usr     = 'test@itprofessor.cn'
-    emailapp.to      = ['admin@wlfei.com', 'basicworld@163.com']
-    emailapp.subject = 'hello you'
-    emailapp.body    = """abc"""
-    emailapp.attach = ('rabbit.py', 'carrot.py')
-    emailapp.send()
+    # emailapp         = EmailSender()
+    # emailapp.usr     = 'test@itprofessor.cn'
+    # emailapp.to      = ['admin@wlfei.com', 'basicworld@163.com']
+    # emailapp.subject = 'hello you'
+    # emailapp.body    = """abc"""
+    # emailapp.attach = ('rabbit.py', 'carrot.py')
+    # emailapp.send()
 
     # csvapp = CsvManager('test.csv')
     # csvapp.writerow('122', '2')
