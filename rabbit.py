@@ -329,7 +329,7 @@ class CsvManager(object):
         if not self._file.closed:
             self._file.close()
 
-    def csv2xls(self, delete_csv=True):
+    def csv2xls(self, delete_csv=False):
         """
         convert csv file to xls file
         must be used after csv file closed
@@ -493,7 +493,7 @@ class MySQLManager(object):
 
 
 class ZipManager(object):
-    def __init__(self, filename, mode='r', filedir='./', pwd=''):
+    def __init__(self, filename, mode='w', filedir='./', pwd=''):
         """
         ZipManager(filename, mode='w', filedir='./')
         <class>: read, write, or rewrite zipfile
@@ -515,19 +515,6 @@ class ZipManager(object):
                     self._pwd else zipfile(_full_filename, self._mode)
         else:
             raise TypeError("zipfile model has no open_mode: %s" % self._mode)
-
-    # def read(self):
-    #     if self._mode in ('w', 'a'):
-    #         raise TypeError("ZipManager have no write_function with \
-    #                         open_mode: %s" % self._mode)
-    #     pass
-
-    # def extractall(self, todir='./'):
-    #     if self._mode in ('w', 'a'):
-    #         raise TypeError("ZipManager have no extract_function with \
-    #                         open_mode: %s" % self._mode)
-    #     os.makedirs(todir) if not os.path.isdir(todir) else None
-    #     # todo
 
     def write(self, zipfile='.*', zipdir='./', zipfolder=False):
         """
@@ -936,7 +923,7 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
-    test_func(1,2)
+    test_func(1, 2)
     # emailget = EmailGetter()
     # emailget.usr = 'test@itprofessor.cn'
     # emailget.get()
