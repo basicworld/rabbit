@@ -176,6 +176,8 @@ def time_builder(basetime='', timedelta=0, target_type='day'):
         'dbYHMS/': '%d/%b/%Y:%H:%M:%S',
         'dbY/': '%d/%b/%Y',  # '27/Mar/2016'
         'dbY-': '%d-%b-%Y',  # '27-Mar-2016'
+        'mdYHMS/': '%m/%d/%Y:%H:%M:%S',
+        'mdY000/': '%m/%d/%Y:00:00:00',
         'full_time': "%a, %d %b %Y %H:%M:%S %z",
     }
     _target_time = basetime + _oneday * timedelta
