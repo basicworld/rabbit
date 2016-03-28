@@ -20,10 +20,54 @@ import requests
 import carrot
 from decimal import Decimal
 import imaplib
+from multiprocessing import Pool
+from multiprocessing import cpu_count
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
+
+
+class PoolManager(object):
+    def __init__(self, args):
+        """
+        [(func1, args1), (func2, args2)]
+        """
+        self.pool = Pool(cpu_count())
+        self.args = [i for i in args]
+
+    def add(self, args):
+        self.args += [i for i in args]
+
+    def run(self):
+        self.collector = []
+        for func, argv in self.args:
+            result = self.pool.apply_async(func, (argv, ))
+            self.collector.append([func.__name__, argv, result])
+        self.pool.close()
+        self.pool.join()
+
+        jobs_num = len(self.collector)
+        jobs_successful = 0
+        bar_length = 30
+        while jobs_successful < jobs_num:
+            for index, job in enumerate(self.collector):
+                percent = index / float(jobs_num - 1) * 100
+                hashes = '#' * int(percent / 100.0 * bar_length)
+                spaces = ' ' * (bar_length - len(hashes))
+                sys.stdout.write("\r<%s>[%s] %d%%" % ('Finish',
+                                                      hashes + spaces,
+                                                      percent))
+                sys.stdout.flush()
+
+                result = job[-1]
+                if result.successful():
+                    del self.collector[index][-1]
+                    self.collector[index].append(result.get())
+                    jobs_successful += 1
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        return self.collector
 
 
 def filer(filename='', filedir='./'):
