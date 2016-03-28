@@ -305,6 +305,7 @@ class CsvManager(object):
         filedir = os.path.abspath(filedir)
         os.makedirs(filedir) if not os.path.isdir(filedir) else True
         # create csv file
+        filename = unicode(filename)
         filename += '.csv' if not filename.endswith('.csv') else ''
         self._full_filename = os.path.join(filedir, filename)
         _write_bom = False if os.path.isfile(self._full_filename) else True
