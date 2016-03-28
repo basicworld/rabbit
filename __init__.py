@@ -17,3 +17,4 @@ from rabbit import MySQLManager
 from rabbit import XlsManager
 from rabbit import ZipManager
 from rabbit import EmailGetter
+from rabbit import xls2dict
