@@ -122,8 +122,8 @@ def func_monitor(trace_this=True):
                 _start_time = datetime.datetime.now()
                 _resp = func(*args, **kwargs)
                 _end_time = datetime.datetime.now()
-                _time_diff = (_end_time - _start_time).microseconds / 1000
-                print (u"<%s> used %s ms." % (func.__name__, _time_diff))
+                _time_diff = (_end_time - _start_time).total_seconds()
+                print (u"<%s> used %s s." % (func.__name__, _time_diff))
                 return _resp
             return _wrapper
     else:
@@ -931,14 +931,17 @@ class EmailGetter(object):
 
 @func_monitor(True)
 def test_func(x, y):
+    time.sleep(5)
     return x + y
 
 
 if __name__ == '__main__':
-    emailget = EmailGetter()
-    emailget.usr = 'test@itprofessor.cn'
-    emailget.get()
-    emailget.close()
+    test_func(1,2)
+    # emailget = EmailGetter()
+    # emailget.usr = 'test@itprofessor.cn'
+    # emailget.get()
+    # emailget.close()
+
     # from optparse import OptionParser
     # usage = """%prog [-e <email>]"""
     # version = "%prog 1.0"
