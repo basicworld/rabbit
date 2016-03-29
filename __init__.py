@@ -14,7 +14,9 @@ from rabbit import logger
 from rabbit import csv2xls
 from rabbit import CsvManager
 from rabbit import MySQLManager
+from rabbit import xls2dict
 from rabbit import XlsManager
 from rabbit import ZipManager
 from rabbit import EmailGetter
-from rabbit import xls2dict
+from rabbit import EmailSender
+from rabbit import PoolManager
