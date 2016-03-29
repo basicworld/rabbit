@@ -48,23 +48,27 @@ class PoolManager(object):
         self.pool.join()
 
         jobs_num = len(self.collector)
+        # jobs_num = 2 if jobs_num <= 1 else jobs_num
         jobs_successful = 0
         bar_length = 30
         while jobs_successful < jobs_num:
             for index, job in enumerate(self.collector):
-                percent = index / float(jobs_num - 1) * 100
-                hashes = '#' * int(percent / 100.0 * bar_length)
-                spaces = ' ' * (bar_length - len(hashes))
-                sys.stdout.write("\r<%s>[%s] %d%%" % ('Finish',
-                                                      hashes + spaces,
-                                                      percent))
-                sys.stdout.flush()
+                if jobs_num > 1:
+                    percent = index / float(jobs_num - 1) * 100
+                    hashes = '#' * int(percent / 100.0 * bar_length)
+                    spaces = ' ' * (bar_length - len(hashes))
+                    sys.stdout.write("\r%s: [%s] %d%%" % ('Percent',
+                                                          hashes + spaces,
+                                                          percent))
+                    sys.stdout.flush()
 
                 result = job[-1]
-                if result.successful():
+                if not isinstance(result, list) and result.successful():
                     del self.collector[index][-1]
                     self.collector[index].append(result.get())
                     jobs_successful += 1
+                else:
+                    pass
         sys.stdout.write('\n')
         sys.stdout.flush()
         return self.collector
@@ -353,7 +357,10 @@ class CsvManager(object):
         filename += '.csv' if not filename.endswith('.csv') else ''
         self._full_filename = os.path.join(filedir, filename)
         _write_bom = False if os.path.isfile(self._full_filename) else True
-        self._file = open(self._full_filename, mode)
+        try:
+            self._file = open(self._full_filename, mode)
+        except IOError as e:
+            raise IOError("Permission denied: close file %s and try again" % self._full_filename)
 
         # adapt to Chinese
         if _write_bom or mode.startswith('w'):
