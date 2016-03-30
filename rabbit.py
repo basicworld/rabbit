@@ -394,14 +394,17 @@ def imager(url, **kwargs):
 
 
 class CsvManager(object):
-    def __init__(self, filename, mode='wb', filedir='./'):
+    def __init__(self, filename, mode='wb', filedir='./', **kwargs):
         """
         CsvManager(filename, mode='wb', filedir='./')
         <class>: wrapper csv model, adapt to Chinese
         @filename<str>: file name
         @mode<str>: open_mode
         @filedir<str>: filedir to save file
+        todo: addtitle
         """
+        self.title = kwargs.get('title', None)
+
         # makedirs if not exsit
         filedir = os.path.abspath(filedir)
         os.makedirs(filedir) if not os.path.isdir(filedir) else True
