@@ -2,6 +2,11 @@
 
 an easy to use tool kit for python, function include: email, time, csv, xls, zip...
 
+### imgetter
+
+function: a function to download img using url
+
+	imgetter(url)
 
 ### func_monitor
 
@@ -91,12 +96,18 @@ class: create xls file
 
 class: create zip file from files or from dir
 
-### EmailGetter
+### EmailSender
 
 class: send email
 
-	eapp = EmailGetter()
+	eapp = EmailSender()
 	eapp.to = 'test@example.com'
 	eapp.sugject = 'hello'
 	eapp.body = 'world'
 	eapp.send()
+
+### EmailGetter
+
+class: get email
+
+in developing...

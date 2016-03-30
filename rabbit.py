@@ -1,37 +1,81 @@
 # -*- coding:utf8 -*-
 """
-todo: write img_getter() to save img from url
-todo: url2ip() to convert url to ip
-"""
+Usage:
+  rabbit.py imgetter <url> [<savedir>]
+  rabbit.py test_func <args>
 
-import os
-import re
+Arguments:
+  url       url
+  savedir   dirpath
+
+Options:
+  -h --help
+"""
+# todo: url2ip() to convert url to ip
+
 import csv
-import glob
-import time
-import datetime
-import mimetypes
-import MySQLdb
-import zipfile
-import mailer
-import xlrd
-import xlwt
-import requests
 import carrot
-from decimal import Decimal
+import datetime
+import glob
 import imaplib
+import logging
+import logging.config
+import mailer  # pip
+import mimetypes
+import MySQLdb  # pip / easy_install
+import os
+import purl  # pip
+import re
+import sys
+import time
+import requests  # pip
+import xlrd  # pip
+import xlwt  # pip
+import zipfile
+from cStringIO import StringIO
+from decimal import Decimal
+from docopt import docopt  # pip
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-import sys
+from PIL import Image  # pip
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 
+def imgetter(url, savedir=''):
+    """
+    download img from url, save to savedir
+    @savedir path to save img
+
+    usage:
+    >>> url = 'http://www.itprofessor.cn/media/media.jpg'
+    >>> imgetter(url)
+    """
+    url = url.strip()
+    url_resp = requests.get(url)
+    img = Image.open(StringIO(url_resp.content)) if url_resp.ok else None
+    if isinstance(img, Image.Image):
+        parse = purl.URL(url)
+        imgname = os.path.splitext(parse.path().strip('/').
+                                   replace('/', '_'))[0]
+        savedir = savedir if savedir else ''
+        img.save(filer('%s.%s' % (imgname, img.format.lower()),
+                 savedir))
+        return True
+    else:
+        raise TypeError('not a image url: %s' % url)
+
+
 class PoolManager(object):
     def __init__(self, args):
         """
-        [(func1, args1), (func2, args2)]
+        PoolManager(args)
+
+        usage:
+        >>> jobs = [(func1, args1), (func2, args2)]
+        >>> p = PoolManager(jobs)
+        >>> p.run()
         """
         self.pool = Pool(cpu_count())
         self.args = [i for i in args]
@@ -47,8 +91,8 @@ class PoolManager(object):
         self.pool.close()
         self.pool.join()
 
+        # num of jobs in pool
         jobs_num = len(self.collector)
-        # jobs_num = 2 if jobs_num <= 1 else jobs_num
         jobs_successful = 0
         bar_length = 30
         while jobs_successful < jobs_num:
@@ -67,8 +111,6 @@ class PoolManager(object):
                     del self.collector[index][-1]
                     self.collector[index].append(result.get())
                     jobs_successful += 1
-                else:
-                    pass
         sys.stdout.write('\n')
         sys.stdout.flush()
         return self.collector
@@ -82,12 +124,8 @@ def filer(filename='', filedir='./'):
     if filename is null, only filedir be created
     """
     filedir = os.path.abspath(filedir)
-    if not os.path.isdir(filedir):
-        os.makedirs(filedir)
-    if filename:
-        return os.path.join(filedir, filename)
-    else:
-        return filedir
+    os.makedirs(filedir) if not os.path.isdir(filedir) else None
+    return (os.path.join(filedir, filename) if filename else filedir)
 
 
 def logger(name, logname, logdir='./'):
@@ -103,8 +141,6 @@ def logger(name, logname, logdir='./'):
     alog.critical('critical message')
     alog.warning('warning message')
     """
-    import logging
-    import logging.config
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': True,
@@ -974,7 +1010,14 @@ def test_func(x, y):
 
 
 if __name__ == '__main__':
-    test_func(1, 2)
+    args = docopt(__doc__)
+    if args.get('imgetter'):
+        imgetter(args.get('<url>'), args.get('<savedir>'))
+    # url = 'http://www.itprofessor.cn/media/media.jpg'
+    # url = 'http://pic38.nipic.com/20140228/2531170_213554844000_2.jpg'
+    # resp = imgetter(url)
+    # print resp
+    # test_func(1, 2)
     # emailget = EmailGetter()
     # emailget.usr = 'test@itprofessor.cn'
     # emailget.get()
