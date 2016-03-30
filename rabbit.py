@@ -37,10 +37,27 @@ from decimal import Decimal
 from docopt import docopt  # pip
 from multiprocessing import Pool
 from multiprocessing import cpu_count
+from urlparse import urljoin
+from urlparse import urlparse
+from urlparse import urlunparse
+from posixpath import normpath
 from PIL import Image  # pip
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
+
+
+def xurljoin(base, url):
+    """
+    xurljoin(base, url)
+    improved func for uelpsrse.urljoin
+    article from: http://www.coder4.com/archives/2674
+    """
+    url1 = urljoin(base, url)
+    arr = urlparse(url1)
+    path = normpath(arr[2])
+    return urlunparse((arr.scheme, arr.netloc, path,
+                       arr.params, arr.query, arr.fragment))
 
 
 def imgetter(url, savedir=''):
