@@ -7,6 +7,8 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+# tempfile save here
+TMPDIR = './tmp'
 
 EMAIL_ACCOUNT = {
     'test@itprofessor.cn': {

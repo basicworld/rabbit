@@ -2,14 +2,17 @@
 """
 Usage:
   rabbit.py imgetter <url> [<savedir>]
-  rabbit.py test_func <args>
+  rabbit.py splitfile <file_or_dir> [<size>]
+  rabbit.py test
+  rabbit.py urljoin <baseurl> [<url>]
 
 Arguments:
-  url       url
-  savedir   dirpath
+  url           url
+  savedir       dirpath
+  size          int, ex:1 for 1M
 
 Options:
-  -h --help
+  -h --help     show this help
 """
 # todo: url2ip() to convert url to ip
 
@@ -35,6 +38,7 @@ import zipfile
 from cStringIO import StringIO
 from decimal import Decimal
 from docopt import docopt  # pip
+from hashlib import md5
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from urlparse import urljoin
@@ -47,12 +51,61 @@ sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
 
 
+def filesplitter(*args, **kwargs):
+    """
+    split txtfile and return filenames
+    @size=10: split file by 10M, default 10
+    """
+    input_filenames = []
+    for arg in args:
+        if os.path.isfile(arg):
+            input_filenames.append(arg)
+        elif os.path.isdir(arg):
+            for parent, firnames, filenames in os.walk(arg):
+                for filename in filenames:
+                    input_filenames.append(os.path.
+                                           join(os.path.
+                                                abspath(parent),
+                                                filename))
+    try:
+        size = kwargs.get('size')
+        size = int(size) if size else 10
+    except ValueError as e:
+        raise ValueError('Invalid params: %s' % str(kwargs))
+    _tmp_dir = filer(None, os.path.join(carrot.TMPDIR, 'data'))
+
+    def _filewriter(filename, block):
+        with open(sub_filename, 'w') as sub_f:
+            sub_f.writelines(block)
+        return True
+
+    output_filenames = []
+    for filename in input_filenames:
+        sub_count = 0
+        f = open(filename)
+        while True:
+            block = f.readlines(1024000 * size)  # 1M
+            if not block:
+                break
+            sub_filename = os.path.join(_tmp_dir,  # tmp data dir
+                                        ('-%s' % sub_count).  # subcount
+                                        join(os.path.splitext(os.  # filename
+                                        path.split(filename)[-1])))
+            if _filewriter(filename, block):
+                output_filenames.append(sub_filename)
+            sub_count += 1
+    return output_filenames
+
+
 def xurljoin(base, url):
     """
     xurljoin(base, url)
     improved func for uelpsrse.urljoin
     article from: http://www.coder4.com/archives/2674
+    @base   baseurl
+    @url    path
     """
+    url = url if url else ''
     url1 = urljoin(base, url)
     arr = urlparse(url1)
     path = normpath(arr[2])
@@ -102,23 +155,32 @@ class PoolManager(object):
 
     def run(self):
         self.collector = []
-        for func, argv in self.args:
-            result = self.pool.apply_async(func, (argv, ))
+        jobs_num = len(self.args)
+        bar_length = 30
+        for index, (func, argv) in enumerate(self.args):
+            if jobs_num > 1:
+                percent = index / float(jobs_num - 1) * 100
+                hashes = '#' * int(percent / 100.0 * bar_length)
+                spaces = ' ' * (bar_length - len(hashes))
+                sys.stdout.write("\r%s: [%s] %d%%" % ('Add',
+                                                      hashes + spaces,
+                                                      percent))
+                sys.stdout.flush()
+            result = self.pool.apply_async(func, argv)
+            # result = self.pool.apply_async(func, (argv, ))
             self.collector.append([func.__name__, argv, result])
         self.pool.close()
         self.pool.join()
 
         # num of jobs in pool
-        jobs_num = len(self.collector)
         jobs_successful = 0
-        bar_length = 30
         while jobs_successful < jobs_num:
             for index, job in enumerate(self.collector):
                 if jobs_num > 1:
                     percent = index / float(jobs_num - 1) * 100
                     hashes = '#' * int(percent / 100.0 * bar_length)
                     spaces = ' ' * (bar_length - len(hashes))
-                    sys.stdout.write("\r%s: [%s] %d%%" % ('Percent',
+                    sys.stdout.write("\r%s: [%s] %d%%" % ('Run',
                                                           hashes + spaces,
                                                           percent))
                     sys.stdout.flush()
@@ -1023,21 +1085,29 @@ class EmailGetter(object):
         #    M.store(num, '+FLAGS', '\\Seen')
 
 
-@func_monitor(True)
-def test_func(x, y):
-    time.sleep(5)
+# @func_monitor(True)
+def test_func():
+    x, y = 1,2
     return x + y
 
 
 if __name__ == '__main__':
+    # print filesplitter(sys.argv[1])
     args = docopt(__doc__)
-    if args.get('imgetter'):
+    # print args
+    if args.get('test'):
+        jobs = []
+        for i in range(9999):
+            jobs.append((test_func, ()))
+        p = PoolManager(jobs)
+        p.run()
+    elif args.get('imgetter'):
         imgetter(args.get('<url>'), args.get('<savedir>'))
-    # url = 'http://www.itprofessor.cn/media/media.jpg'
-    # url = 'http://pic38.nipic.com/20140228/2531170_213554844000_2.jpg'
-    # resp = imgetter(url)
-    # print resp
-    # test_func(1, 2)
+    elif args.get('splitfile'):
+        filesplitter(args.get('<file_or_dir>'), size=args.get('<size>'))
+    elif args.get('urljoin'):
+        print urljoin(args.get('<baseurl>'), args.get('<url>'))
+
     # emailget = EmailGetter()
     # emailget.usr = 'test@itprofessor.cn'
     # emailget.get()
