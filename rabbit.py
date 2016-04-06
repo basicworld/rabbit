@@ -1087,7 +1087,7 @@ class EmailGetter(object):
 
 # @func_monitor(True)
 def test_func():
-    x, y = 1,2
+    x, y = 1, 2
     return x + y
 
 
