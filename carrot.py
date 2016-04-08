@@ -16,10 +16,10 @@ EMAIL_ACCOUNT = {
         'pwd': 'Rabbit1234',  # change to your owen pwd
         'signature': u'Yours sincerely',
     },
-    'usrname@example.com': {
-        'usr': '',
-        'pwd': '',
-        'signature': u'',
+    'wanglifei@adyolo.com': {
+        'usr': 'wanglifei@adyolo.com',
+        'pwd': 'xf911017',
+        'signature': u'wanglifei@adyolo.com',
     },
 }
 

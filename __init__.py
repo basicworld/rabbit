@@ -18,7 +18,7 @@ from rabbit import logger
 from rabbit import time_builder
 from rabbit import MySQLManager
 from rabbit import PoolManager
-from rabbit import urljoin
+from rabbit import xurljoin
 from rabbit import xls2dict
 from rabbit import XlsManager
 from rabbit import ZipManager

@@ -624,8 +624,8 @@ class MySQLManager(object):
         @sql<str>: sql or sql model
         @kwargs<dict>: dict to decorate sql
         """
-        sql = sql % kwargs
         try:
+            sql = sql % kwargs
             self._curs.execute(sql)
             resp = self._curs.fetchall()
             if debug:
@@ -633,6 +633,7 @@ class MySQLManager(object):
             return resp
         except:
             print sql
+            print kwargs
             raise
 
     def close(self):
