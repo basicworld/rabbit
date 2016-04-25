@@ -16,6 +16,7 @@ from rabbit import func_monitor
 from rabbit import lister
 from rabbit import logger
 from rabbit import time_builder
+from rabbit import tree
 from rabbit import MySQLManager
 from rabbit import PoolManager
 from rabbit import xurljoin

@@ -26,11 +26,16 @@ import sys
 import time
 from decimal import Decimal
 from docopt import docopt  # pip
+from collections import defaultdict
 # from hashlib import md5
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
+
+
+# tree
+tree = lambda: defaultdict(tree)
 
 
 def filesplitter(*args, **kwargs):
