@@ -69,6 +69,14 @@ function: use logging easily
 	lg.error('error')
 	lg.info('running well')
 
+### tree
+
+functions: a good function to create default dict
+
+	a = tree()
+	a['a']['b']['c'] = 1
+	print a['a']['b']['c']
+
 ### csv2xls
 
 function: change csv file to xls
