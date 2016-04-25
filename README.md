@@ -8,6 +8,12 @@ function: a function to download img using url
 
 	imgetter(url)
 
+### filesplitter(*args, **kwargs)
+
+function: split file(s) into small size
+
+	splited_file_names = filesplitter(filename1, filename2, size=10)
+
 ### func_monitor
 
 function: a decorator to show runnig time of func
