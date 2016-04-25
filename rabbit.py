@@ -20,32 +20,14 @@ import csv
 import carrot
 import datetime
 import glob
-import imaplib
-import logging
-import logging.config
-import mailer  # pip
-import mimetypes
-import MySQLdb  # pip / easy_install
 import os
-import purl  # pip
 import re
 import sys
 import time
-import requests  # pip
-import xlrd  # pip
-import xlwt  # pip
-import zipfile
-from cStringIO import StringIO
 from decimal import Decimal
 from docopt import docopt  # pip
-from hashlib import md5
-from multiprocessing import Pool
-from multiprocessing import cpu_count
-from urlparse import urljoin
-from urlparse import urlparse
-from urlparse import urlunparse
-from posixpath import normpath
-from PIL import Image  # pip
+# from hashlib import md5
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 BASE_DIR = os.path.split(os.path.realpath(__file__))[0]
@@ -105,6 +87,11 @@ def xurljoin(base, url):
     @base   baseurl
     @url    path
     """
+    from urlparse import urljoin
+    from urlparse import urlparse
+    from urlparse import urlunparse
+    from posixpath import normpath
+
     url = url if url else ''
     url1 = urljoin(base, url)
     arr = urlparse(url1)
@@ -122,6 +109,10 @@ def imgetter(url, savedir=''):
     >>> url = 'http://www.itprofessor.cn/media/media.jpg'
     >>> imgetter(url)
     """
+    from cStringIO import StringIO
+    import purl  # pip
+    import requests  # pip
+    from PIL import Image  # pip
     url = url.strip()
     url_resp = requests.get(url)
     img = Image.open(StringIO(url_resp.content)) if url_resp.ok else None
@@ -138,6 +129,9 @@ def imgetter(url, savedir=''):
 
 
 class PoolManager(object):
+    from multiprocessing import cpu_count
+    from multiprocessing import Pool
+
     def __init__(self, args):
         """
         PoolManager(args)
@@ -220,6 +214,8 @@ def logger(name, logname, logdir='./'):
     alog.critical('critical message')
     alog.warning('warning message')
     """
+    import logging
+    import logging.config
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': True,
@@ -402,6 +398,8 @@ def xls2dict(filename):
     xls2dict(filename)
     get a xls or xlsx, return a list
     """
+    import xlrd  # pip
+
     collector = []
     _full_filename = os.path.abspath(filename)
     try:
@@ -520,6 +518,8 @@ class CsvManager(object):
 
 
 class XlsManager(object):
+    import xlwt  # pip
+
     def __init__(self, filename, mode='w', filedir='./'):
         """
         XlsManager(filename, mode='w', filedir='./')
@@ -595,6 +595,8 @@ class XlsManager(object):
 
 
 class MySQLManager(object):
+    import MySQLdb  # pip / easy_install
+
     def __init__(self, host, user, passwd, db, port=3306, charset='utf8'):
         """
         MySQLManager(host, user, passwd, db, port=3306, charset='utf8')
@@ -663,6 +665,8 @@ class MySQLManager(object):
 
 
 class ZipManager(object):
+    import zipfile
+
     def __init__(self, filename, mode='w', filedir='./', pwd=''):
         """
         ZipManager(filename, mode='w', filedir='./')
@@ -686,11 +690,11 @@ class ZipManager(object):
         else:
             raise TypeError("zipfile model has no open_mode: %s" % self._mode)
 
-    def write(self, zipfile='.*', zipdir='./', zipfolder=False):
+    def write(self, zip_file='.*', zipdir='./', zipfolder=False):
         """
-        write(self, zipdir='./', zipfile=None)
+        write(self, zipdir='./', zip_file=None)
         write target file(s) to zip
-        @zipfile<str>: from file(s), it can be re_type such as .*\.csv
+        @zip_file<str>: from file(s), it can be re_type such as .*\.csv
         @zipdir<str>: from dir
         @zipfolder<bool>: zip folder or not
         """
@@ -703,7 +707,7 @@ class ZipManager(object):
             zipdir_len = len(zipdir.rstrip(os.sep)) + 1
             for dirname, subdirs, files in os.walk(zipdir):
                 for filename in files:
-                    if re.search(zipfile, filename):
+                    if re.search(zip_file, filename):
                         path = os.path.join(dirname, filename)
                         entry = path[zipdir_len:]
                         self._file.write(path, entry)
@@ -711,7 +715,7 @@ class ZipManager(object):
         #not zip folder
         else:
             for _item in glob.glob(os.path.join(zipdir, '*')):
-                if re.search(zipfile, _item) and os.path.isfile(_item):
+                if re.search(zip_file, _item) and os.path.isfile(_item):
                     self._file.write(_item)
 
     def close(self):
@@ -737,6 +741,9 @@ class ZipManager(object):
 
 
 class EmailSender(object):
+    import mailer  # pip
+    import mimetypes
+
     def __init__(self, **kwargs):
         """
         easy to use mail
@@ -980,6 +987,7 @@ def email_parser(raw_email):
 
 
 class EmailGetter(object):
+    import imaplib
 
     def __init__(self, **kwargs):
         """receive email"""
@@ -1107,7 +1115,7 @@ if __name__ == '__main__':
     elif args.get('splitfile'):
         filesplitter(args.get('<file_or_dir>'), size=args.get('<size>'))
     elif args.get('urljoin'):
-        print urljoin(args.get('<baseurl>'), args.get('<url>'))
+        print xurljoin(args.get('<baseurl>'), args.get('<url>'))
 
     # emailget = EmailGetter()
     # emailget.usr = 'test@itprofessor.cn'
