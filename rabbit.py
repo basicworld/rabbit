@@ -392,6 +392,7 @@ def distinct(*args):
     """
     distinct(*args)
     return distinct items
+    same func as set
     """
     items = lister(args)
     func = lambda x, y: x if y in x else x + [y]
@@ -449,13 +450,6 @@ def csv2xls(filename):
 
     _xlsapp.close()
     return True
-
-
-def imager(url, **kwargs):
-    """
-    default url
-    """
-    pass
 
 
 class CsvManager(object):
