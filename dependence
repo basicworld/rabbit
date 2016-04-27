@@ -1,0 +1,8 @@
+purl
+docopt
+xlrd
+xlwt
+mailer
+MySQLdb
+lxml
+pillow
