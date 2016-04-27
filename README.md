@@ -2,6 +2,17 @@
 
 an easy to use tool kit for python, function include: email, time, csv, xls, zip...
 
+### defore use
+
+1. python version 2.7x required
+
+2. you should install packages in file `dependence`
+
+	pip install -r dependence
+
+Note that some packages is not easy to install, eg lxml, pillow.
+you should google for method
+
 ### imgetter
 
 function: a function to download img using url
