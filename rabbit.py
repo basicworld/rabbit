@@ -594,7 +594,6 @@ class XlsManager(object):
 
 
 class MySQLManager(object):
-    import MySQLdb  # pip / easy_install
 
     def __init__(self, host, user, passwd, db, port=3306, charset='utf8'):
         """
@@ -607,6 +606,7 @@ class MySQLManager(object):
         @port<int>
         @charset<str>: same in MySQLdb.connect
         """
+        import MySQLdb  # pip / easy_install
         try:
             self._conn = MySQLdb.connect(host=host,
                                          user=user,
@@ -636,6 +636,9 @@ class MySQLManager(object):
             print sql
             print kwargs
             raise
+
+    def commit(self):
+        self._conn.commit()
 
     def close(self):
         """
