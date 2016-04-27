@@ -95,12 +95,12 @@ def xurljoin(base, url):
     from urlparse import urljoin
     from urlparse import urlparse
     from urlparse import urlunparse
-    from posixpath import normpath
+    from purl import URL
 
     url = url if url else ''
     url1 = urljoin(base, url)
     arr = urlparse(url1)
-    path = normpath(arr[2])
+    path = URL(arr[2]).path()
     return urlunparse((arr.scheme, arr.netloc, path,
                        arr.params, arr.query, arr.fragment))
 
